@@ -1,10 +1,13 @@
+#dependences
 import os
 import fitz  # PyMuPDF
 from PyPDF2 import PdfReader, PdfWriter
 from tkinter import Tk, Canvas, messagebox, PhotoImage, Button, Toplevel, Label, Entry, IntVar, Frame, CENTER
 from PIL import Image, ImageTk
-from tkinter import filedialog,IntVar, StringVar, BooleanVar,colorchooser, ttk
+from tkinter import font, filedialog, IntVar, StringVar, BooleanVar,colorchooser, ttk
 
+#dependences personalisés
+from utils.utils import * 
 
 
 
@@ -21,12 +24,15 @@ class PDFCanvasRenderer:
             pdf_path (str): Le chemin du fichier PDF à afficher.
         """
         # Logique
-        self.pdf_path = None
+        self.input_pdf_path = None #path du premier pdf
+        self.pdf_path = None #le path du pdf qui chqnge en 'temp/' quand le pdf est chargé
+        self.output_path = "out/"
         self.paths_to_duplicated_pages = []
         self.coordinates = []  # Liste pour stocker les coordonnées des clics
         self.interval = {"start": 0, "end": 0}  # Intervalle pour numéroter les annotations
         self.num_pages_to_duplicate = 1  # Nombre de duplications de la page
         self.is_file_loaded = False
+        self.font_settings = {}
 
         # Graphique
         self.root = None  # Fenêtre principale Tkinter
@@ -120,7 +126,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon5"],
-            command= self.config_and_numbering_page,
+            command= self.draw_number,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -132,6 +138,7 @@ class PDFCanvasRenderer:
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
+        
 
     
     
@@ -142,6 +149,7 @@ class PDFCanvasRenderer:
         """
         Efface les coordonnées actuelles.
         """
+        
         self.coordinates = []
 
         # recharger la page
@@ -213,6 +221,7 @@ class PDFCanvasRenderer:
             
         # Ouvre une boîte de dialogue pour sélectionner un fichier
         self.pdf_path = select_file()
+        self.input_pdf_path = self.pdf_path
 
         doc = fitz.open(self.pdf_path)
         page = doc[0]
@@ -293,6 +302,8 @@ class PDFCanvasRenderer:
             messagebox.showerror("Erreur", "The file must be load before")
             return
         
+        
+        
         config_window = Toplevel(self.root)
         config_window.title("Duplicate_page")
 
@@ -308,7 +319,7 @@ class PDFCanvasRenderer:
 
         def duplicate_pdf_page(num_duplicates = 50):
             """
-            Duplique une page PDF 10 fois et stocke les pages dupliquées dans un dossier temporaire.
+            Duplique une page PDF x fois et stocke les pages dupliquées dans un dossier temporaire.
 
             Args:
                 self.pdf_path (str): Le chemin du fichier PDF source (doit contenir une seule page).
@@ -319,6 +330,11 @@ class PDFCanvasRenderer:
                 list: Liste des chemins des fichiers PDF dupliqués.
             """
             output_dir = "temp"  # par défaut, les pages dupliquées seront stockées dans le dossier 'temp'
+
+            if self.paths_to_duplicated_pages:
+                self.paths_to_duplicated_pages = [] # vider la liste des path temporaires
+                clear_folder("temp/") # clear le dossier temp
+                self.pdf_path = self.input_pdf_path # rendre le path du pdf d'origine au self.pdf_path
 
             # Vérifie si le fichier d'entrée existe
             if not os.path.exists(self.pdf_path):
@@ -436,7 +452,7 @@ class PDFCanvasRenderer:
         color_display.grid(row=4, column=1, padx=5, pady=5)
 
         def choose_color():
-            color_code = colorchooser.askcolor(title="Choisissez une couleur")[1]
+            color_code = colorchooser.askcolor(title="Choisissez une couleur")[0]
             if color_code:
                 font_color_var.set(color_code)
                 color_display.config(bg=color_code)
@@ -454,15 +470,17 @@ class PDFCanvasRenderer:
         # Actions
         def save_configuration():
             self.interval = {"start": start_var.get(), "end": end_var.get()}
-            font_settings = {
+            self.font_settings = {
                 "size": font_size_var.get(),
                 "family": font_family_var.get(),
                 "color": font_color_var.get(),
                 "italic": italic_var.get(),
                 "bold": bold_var.get(),
             }
-            messagebox.showinfo("Succès", f"Configuration enregistrée :\n{font_settings}")
+
             config_window.destroy()
+          
+            
 
         def cancel_configuration():
             config_window.destroy()
@@ -476,52 +494,90 @@ class PDFCanvasRenderer:
     
     
     
-    def drawer(self, style):
-        new_pdf_path = self.pdf_path
+    def draw_number(self):
         pages_range = len(self.paths_to_duplicated_pages)
-        coordinates  = self.coordinates # Liste pour stocker les coordonnées des clics
-        number_range = self.interval  # Intervalle pour numéroter les annotations
+        print("drawer")
+        
+        def load_file(path):
+            """
+            Ouvre un fichier PDF avec PyMuPDF.
+            
+            :param file_path: Chemin du fichier PDF.
+            :return: Document PDF ouvert.
+            """
+            try:
+                doc = fitz.open(path)
+                print(f"PDF '{path}' ouvert avec succès.")
+                return doc
+            except Exception as e:
+                print(f"Erreur lors de l'ouverture du fichier PDF : {e}")
+                raise
 
-        def load_file_in_canvas(path):
-            doc = fitz.open(path)
-            page = doc[0]
-            pix = page.get_pixmap()
-            width, height = pix.width, pix.height
 
-            # Calculer le ratio d'ajustement pour limiter la taille si nécessaire
-            max_width, max_height = self.root.winfo_screenwidth() - 100, self.root.winfo_screenheight() - 100
-            scale_factor = min(max_width / width, max_height / height, 1)
+        def draw(doc, number, coordinates):
+            """
+            Ajoute un numéro sur une page PDF à des coordonnées spécifiées.
+            
+            :param doc: Document PDF ouvert.
+            :param page_number: Numéro de la page (index 0).
+            :param number: Numéro à ajouter.
+            :param coordinates: Liste de 4 coordonnées [(x1, y1), (x2, y2), ...].
+            """
+            try:
+                page = doc[0]  # Récupérer la page spécifiée
+                for x, y in coordinates:
+                    # Ajouter le texte à chaque coordonnée
+                    page.insert_text((x, y), str(self.interval["start"]), fontsize= int(self.font_settings["size"]), color=self.font_settings["color"])
+                    self.interval["start"] = self.interval["start"] + 1
+                
+            except Exception as e:
+                raise
 
-            new_width = int(width * scale_factor)
-            new_height = int(height * scale_factor)
+           
+        
+        def save_changes (doc, output_path):
+            """
+            Enregistre un fichier PDF modifié.
+            
+            :param doc: Document PDF ouvert et modifié.
+            :param output_path: Chemin du fichier de sortie.
+            """
+            try:
+                doc.save(output_path)
+                print(f"PDF enregistré sous '{output_path}'.")
+            except Exception as e:
+                print(f"Erreur lors de l'enregistrement du fichier PDF : {e}")
+                raise
 
-            # Créer un canevas pour afficher le PDF et l'ajouter à la fenêtre principale
-            self.canvas = Canvas(self.root, bg="white")
-            self.canvas.pack(side="right", fill="both", expand=True)
-            self.track_clicks()
 
-            # Redimensionner le canevas
-            self.canvas.config(width=new_width, height=new_height)
-            self.canvas.pack_propagate(False)
 
-            # Centrer le canevas
-            self.canvas.place(relx=0.5, rely=0.5, anchor="center")
+        """
+        Processus complet pour ouvrir, modifier, et enregistrer un fichier PDF.
+        
+        :param file_path: Chemin du fichier PDF source.
+        :param output_path: Chemin du fichier PDF modifié.
+        :param number: Numéro à ajouter.
+        :param coordinates: Liste de 4 coordonnées [(x1, y1), (x2, y2), ...].
+        """
+        # Étape 1 : Ouvrir le fichier PDF
 
-            # Redimensionner l'image PDF en utilisant get_pixmap() avec un facteur d'échelle
-            pix_resized = page.get_pixmap(matrix=fitz.Matrix(scale_factor, scale_factor))
+        for index, single_path in enumerate(self.paths_to_duplicated_pages):
 
-            img = PhotoImage(data=pix_resized.tobytes("ppm"))
-            self.canvas.create_image(0, 0, image=img, anchor="nw")
-            self.canvas.img = img
+            doc = load_file(single_path)
+            
+            # Étape 2 : Ajouter le numéro sur la première page
+            draw(doc,self.interval["start"], self.coordinates)
+            
+            # Étape 3 : Enregistrer le PDF modifié
+            pdf_out_path = self.output_path+"out_pdf"+ str(index)
+            save_changes(doc,pdf_out_path)
+            
+            # Étape 4 : Fermer le document
+            doc.close()
+            print("Processus terminé avec succès.")
+        
+        self.reload_page
 
-            #marquer le fichier comme etant deja chqrgé
-            if self.canvas:
-                self.is_file_loaded = True
-
-            # Ajuster la fenêtre principale
-            self.root.geometry(f"{new_width + 100}x{new_height + 100}")
-
-        def save_page
 
 
     def start(self):
