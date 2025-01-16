@@ -8,6 +8,7 @@ from tkinter import font, filedialog, IntVar, StringVar, BooleanVar,colorchooser
 
 #dependences personalisés
 from utils.utils import * 
+from utils.drawer import * 
 
 
 
@@ -40,7 +41,11 @@ class PDFCanvasRenderer:
         self.sidebar = None  # Sidebar pour les icônes
         self.icons = {}  # Dictionnaire pour stocker les icônes chargées
 
-    ### Partie graphique ###
+
+
+    ### initialisation des outils ###
+        self.drawer = None
+
 
 
 
@@ -118,7 +123,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon4"],
-            command=self.config_and_numbering_page,
+            command=self.config_and_numbering,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -126,7 +131,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon5"],
-            command= self.draw_number,
+            command= self.drawer_start,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -134,7 +139,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon6"],
-            command= self.config_and_numbering_page,
+            command= self.save_file,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -393,192 +398,25 @@ class PDFCanvasRenderer:
     
     
     
-    def config_and_numbering_page(self):
+    def config_and_numbering(self):
         """
         Ouvre une fenêtre de configuration au centre de la fenêtre principale pour
-        permettre à l'utilisateur de définir les attributs `interval`, `font_size`,
+        permettre à l'utilisateur de définir les attributs  `font_size`,
         `font_family`, `font_color`, `italic`, et `bold`.
         """
-        # si le fichier est chargé
-        if not self.is_file_loaded:
-            messagebox.showerror("Erreur", "No file loaded")
-            return
-        
-        # si les pages sont dejà dupliquées
-        if not self.paths_to_duplicated_pages:
-            messagebox.showerror("Erreur", "Duplicate page before")
-            return
-        # si les coodonees ont ete marquées
-        if not self.coordinates :
-            messagebox.showerror("Erreur", "Undifined number area")
-            return
+        self.drawer = Drawer(self.root, self.canvas, self.coordinates, self.paths_to_duplicated_pages)
+        self.drawer.open()
+
+    def drawer_start(self):
         
         
-
-        config_window = Toplevel(self.root)
-        config_window.title("Config interval")
-
-        # Centrer la fenêtre de configuration
-        config_window.geometry(f"400x400+{self.root.winfo_x() + 100}+{self.root.winfo_y() + 100}")
-
-        # Variables pour les champs de configuration
-        start_var = IntVar(value=self.interval.get("start", 0))
-        end_var = IntVar(value=self.interval.get("end", 0))
-        font_size_var = IntVar(value=12)
-        font_family_var = StringVar(value="Arial")
-        font_color_var = StringVar(value="#000000")  # Couleur par défaut : noir
-        italic_var = BooleanVar(value=False)
-        bold_var = BooleanVar(value=False)
-
-        # Configuration de l'intervalle
-        Label(config_window, text="Start:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        Entry(config_window, textvariable=start_var).grid(row=0, column=1, padx=5, pady=5)
-
-        Label(config_window, text="End:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        Entry(config_window, textvariable=end_var).grid(row=1, column=1, padx=5, pady=5)
-
-        # Taille de police
-        Label(config_window, text="Font Size:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        Entry(config_window, textvariable=font_size_var).grid(row=2, column=1, padx=5, pady=5)
-
-        # Liste déroulante pour le choix de la police
-        Label(config_window, text="Font Family:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        font_choices = ["Arial", "Times New Roman", "Courier New", "Verdana", "Helvetica"]
-        ttk.Combobox(config_window, textvariable=font_family_var, values=font_choices, state="readonly").grid(row=3, column=1, padx=5, pady=5)
-
-        # Palette de couleurs pour la police
-        Label(config_window, text="Font Color:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        color_display = Label(config_window, text="  ", bg=font_color_var.get(), relief="sunken", width=10)
-        color_display.grid(row=4, column=1, padx=5, pady=5)
-
-        def choose_color():
-            color_code = colorchooser.askcolor(title="Choisissez une couleur")[0]
-            if color_code:
-                font_color_var.set(color_code)
-                color_display.config(bg=color_code)
-
-        Button(config_window, text="Choose", command=choose_color).grid(row=4, column=2, padx=5, pady=5)
-
-        # Styles (Italic, Bold)
-        Label(config_window, text="Styles:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
-        italic_check = ttk.Checkbutton(config_window, text="Italic", variable=italic_var)
-        italic_check.grid(row=5, column=1, sticky="w")
-
-        bold_check = ttk.Checkbutton(config_window, text="Bold", variable=bold_var)
-        bold_check.grid(row=5, column=2, sticky="w")
-
-        # Actions
-        def save_configuration():
-            self.interval = {"start": start_var.get(), "end": end_var.get()}
-            self.font_settings = {
-                "size": font_size_var.get(),
-                "family": font_family_var.get(),
-                "color": font_color_var.get(),
-                "italic": italic_var.get(),
-                "bold": bold_var.get(),
-            }
-
-            config_window.destroy()
-          
-            
-
-        def cancel_configuration():
-            config_window.destroy()
-
-        Button(config_window, text="Save", command=save_configuration).grid(row=6, column=0, columnspan=2, pady=10)
-        Button(config_window, text="Cancel", command=cancel_configuration).grid(row=6, column=2, columnspan=2, pady=10)
-        
-
-    
-    
-    
-    
-    
-    def draw_number(self):
-        pages_range = len(self.paths_to_duplicated_pages)
-        print("drawer")
-        
-        def load_file(path):
-            """
-            Ouvre un fichier PDF avec PyMuPDF.
-            
-            :param file_path: Chemin du fichier PDF.
-            :return: Document PDF ouvert.
-            """
-            try:
-                doc = fitz.open(path)
-                print(f"PDF '{path}' ouvert avec succès.")
-                return doc
-            except Exception as e:
-                print(f"Erreur lors de l'ouverture du fichier PDF : {e}")
-                raise
-
-
-        def draw(doc, number, coordinates):
-            """
-            Ajoute un numéro sur une page PDF à des coordonnées spécifiées.
-            
-            :param doc: Document PDF ouvert.
-            :param page_number: Numéro de la page (index 0).
-            :param number: Numéro à ajouter.
-            :param coordinates: Liste de 4 coordonnées [(x1, y1), (x2, y2), ...].
-            """
-            try:
-                page = doc[0]  # Récupérer la page spécifiée
-                for x, y in coordinates:
-                    # Ajouter le texte à chaque coordonnée
-                    page.insert_text((x, y), str(self.interval["start"]), fontsize= int(self.font_settings["size"]), color=self.font_settings["color"])
-                    self.interval["start"] = self.interval["start"] + 1
-                
-            except Exception as e:
-                raise
-
-           
-        
-        def save_changes (doc, output_path):
-            """
-            Enregistre un fichier PDF modifié.
-            
-            :param doc: Document PDF ouvert et modifié.
-            :param output_path: Chemin du fichier de sortie.
-            """
-            try:
-                doc.save(output_path)
-                print(f"PDF enregistré sous '{output_path}'.")
-            except Exception as e:
-                print(f"Erreur lors de l'enregistrement du fichier PDF : {e}")
-                raise
+        self.drawer.start_numbering()
 
 
 
-        """
-        Processus complet pour ouvrir, modifier, et enregistrer un fichier PDF.
-        
-        :param file_path: Chemin du fichier PDF source.
-        :param output_path: Chemin du fichier PDF modifié.
-        :param number: Numéro à ajouter.
-        :param coordinates: Liste de 4 coordonnées [(x1, y1), (x2, y2), ...].
-        """
-        # Étape 1 : Ouvrir le fichier PDF
 
-        for index, single_path in enumerate(self.paths_to_duplicated_pages):
-
-            doc = load_file(single_path)
-            
-            # Étape 2 : Ajouter le numéro sur la première page
-            draw(doc,self.interval["start"], self.coordinates)
-            
-            # Étape 3 : Enregistrer le PDF modifié
-            pdf_out_path = self.output_path+"out_pdf"+ str(index)
-            save_changes(doc,pdf_out_path)
-            
-            # Étape 4 : Fermer le document
-            doc.close()
-            print("Processus terminé avec succès.")
-        
-        self.reload_page
-
-
+    def save_file(self):
+        "file saver"
 
     def start(self):
         """
