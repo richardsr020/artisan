@@ -18,6 +18,23 @@ class Drawer:
         self.config = {}
         self.out_temp = "out_temp"
         self.is_loaded_file = False
+
+    def add_leading_zeros(self,number):
+        """
+        Ajoute deux zéros devant le nombre s'il est inférieur à 100.
+        
+        Args:
+            number (int): Le nombre à traiter.
+        
+        Returns:
+            str: Le nombre formaté avec deux zéros devant si nécessaire.
+        """
+        if number < 100:
+            return f"{number:03d}"  # Format en ajoutant des zéros devant jusqu'à une longueur de 3 caractères
+        # si non retourner le nombre tel qu'il est
+        return str(number)
+    
+    
     def project_canvas_coords_to_pdf_points(self, screen_dpi=96):
         """
         Projects coordinates from a canvas (which already has a PDF) onto a new 
@@ -179,6 +196,7 @@ class Drawer:
         doc = fitz.open(path)
         return doc
         
+    
     def save_canvas_to_pdf(self,path):
         """
         Enregistre le contenu d'un Canvas Tkinter en tant qu'image PNG dans 'png_temp',
@@ -228,88 +246,6 @@ class Drawer:
 
 
     def one_per_page(self):
-        
-        # Récupérer les paramètres de style
-        font_family = self.config["font_family"]
-        font_size = self.config["font_size"]
-        font_weight = "bold" if self.config["bold"] else "normal"
-        font_slant = "italic" if self.config["italic"] else "roman"
-  
-        # Créer une police avec les paramètres
-        font = (font_family, font_size, font_weight, font_slant)
-
-        # Créer une couleur avec les paramètres
-        color = self.config["font_color"]
-
-
-        item = 0 # cette variable contien le premier chiffre qui sera ecrit sur des coordonees precis
-        item = self.config["start"] # on initialise la premiere valeur au numero de depart
-        number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
-
-        #boucler sur les nombre de pages
-        for i in range(number_of_pages):
-
-            self.render_pdf_to_canvas(self.paths_to_duplicated_pages[i])
-
-            x, y = coordinates
-
-            self.canvas.create_text(x, y, text=str(item), font=font, fill=color)
-
-            item = item + 1
-
-            # enregistrement de la page courante en pdf
-            self.save_canvas_to_pdf(self.paths_to_duplicated_pages[i])
-
-            # supprimer le canevas pour la prochaine page
-            self.canvas.destroy()
-            self.canvas = None
-
-    
-    
-    def two_per_page(self):
-        # Récupérer les paramètres de style
-        font_family = self.config["font_family"]
-        font_size = self.config["font_size"]
-        font_weight = "bold" if self.config["bold"] else "normal"
-        font_slant = "italic" if self.config["italic"] else "roman"
-  
-        # Créer une police avec les paramètres
-        font = (font_family, font_size, font_weight, font_slant)
-
-        # Créer une couleur avec les paramètres
-        color = self.config["font_color"]
-
-        item = [] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
-        item [0] = self.config["start"] # on initialise la premiere valeur au numero de depart
-        item [1] = self.config["start"] # a cette valeur sera ajoutée le nombre de pages du facturier et former le deuxieme nombre
-
-        number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
-
-        item_index = 0 # le selecteur du numero a ecrir via son index dans le tableau item
-
-        #boucler sur les nombre de pages
-        for i in range(number_of_pages):
-
-            self.render_pdf_to_canvas(self.paths_to_duplicated_pages[i])
-
-            #boucler sur les coordonees
-            for x, y in self.coordinates:
-                self.canvas.create_text(x, y, text=str(item[item_index]), font=font, fill=color)
-                item_index += 1 # mise a jour du selecteur
-                item[item_index] = item[item_index] + number_of_pages # on obtien le deuxieme nompbre par le premier nombre + le nbr de pages du facturier
-
-            item[0] = item[0] + 1
-
-            # enregistrement de la page courante en pdf
-                        # enregistrement de la page courante en pdf
-            self.save_canvas_to_pdf(self.paths_to_duplicated_pages[i])
-
-            # supprimer le canevas pour la prochaine page
-            self.canvas.destroy()
-            self.canvas = None
-
-    
-    def three_per_page(self):
         # Récupérer les paramètres de style
         #font_family = self.config["font_family"]
         font_size = self.config["font_size"]
@@ -319,24 +255,77 @@ class Drawer:
         # Créer une couleur avec les paramètres
         #color = self.config["font_color"]
 
-        item = [3] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
-        item [0] = self.config["start"] # on initialise la premiere valeur au numero de depart
-        item [1] = self.config["start"] # a cette valeur sera ajoutée le nombre de pages du facturier et former le deuxieme nombre
-        item [2] = self.config["start"] # a cette valeur sera ajoutée le nombre de pages du facturier x 2 et former le troisieme nombre
+        # Créer le dossier temporaire si nécessaire
+        output_dir = "out_temp"
+        os.makedirs(output_dir, exist_ok=True)
         
         number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
+        start_number = self.config["start"]  # Numéro de départ
 
-        item_index = 0 # le selecteur du numero a ecrir via son index dans le tableau item
 
         #document temporaire à numeroter
         doc = None
 
+        #boucler sur les nombre de pages
+        for i in range(number_of_pages):
 
+            item = start_number # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
+
+            #ouvrir le pdf
+            doc = self.open_pdf(self.paths_to_duplicated_pages[i])
+
+            #faire une projection de coordonees du canvas vers des point sur pdf
+            self.project_canvas_coords_to_pdf_points()
+            
+            # Récupérer la première et unique coordonnée de self.projected_coordinates
+            if self.projected_coordinates:  # Vérifier que la liste n'est pas vide
+                x, y = self.projected_coordinates[0]  # Extraire la première (et unique) coordonnée
+
+                # Insert the text on the PDF
+                page = doc[0]  # Accéder à la première page du document
+                page.insert_text(
+                    (x, y),
+                    self.add_leading_zeros(item),  # Insérer la valeur actuelle de item
+                    fontsize=int(font_size),
+                    color=(244 / 255, 32 / 255, 32 / 255)
+                )
+
+                # Incrémenter le numéro de départ
+                start_number = start_number + 1
+
+             # Save the modified PDF
+            doc.save("out_temp/" + os.path.basename(self.paths_to_duplicated_pages[i]))
+            doc.close()   
+
+    
+    def two_per_page(self):
+        # Récupérer les paramètres de style
+        #font_family = self.config["font_family"]
+        font_size = self.config["font_size"]
+        #font_weight = "bold" if self.config["bold"] else "normal"
+        #font_slant = "italic" if self.config["italic"] else "roman"
+
+        # Créer une couleur avec les paramètres
+        #color = self.config["font_color"]
+
+        # Créer le dossier temporaire si nécessaire
+        output_dir = "out_temp"
+        os.makedirs(output_dir, exist_ok=True)
+        
         number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
+        start_number = self.config["start"]  # Numéro de départ
 
+
+        #document temporaire à numeroter
+        doc = None
 
         #boucler sur les nombre de pages
         for i in range(number_of_pages):
+
+            item = [start_number, start_number + number_of_pages] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
+
+            item_index = 0 # le selecteur du numero a ecrir via son index dans le tableau item
+
 
             #ouvrir le pdf
             doc = self.open_pdf(self.paths_to_duplicated_pages[i])
@@ -349,15 +338,68 @@ class Drawer:
             
                 # Insert the text on the PDF
                 page = doc[0]
-                page.insert_text((x, y), str(item[item_index]), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
+                page.insert_text((x, y), self.add_leading_zeros(item[item_index]), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
             
-                item[item_index] = item[item_index] + number_of_pages # on obtien le deuxieme nompbre par le premier nombre + le nbr de pages du facturier
+                item_index = item_index + 1 # on incremente l'index
+            
+            start_number = start_number + 1 # on incremente le numero de depart
 
-                # Save the modified PDF
-                doc.save("out_temp/" + os.path.basename(self.paths_to_duplicated_pages[i]))
-                
-            #on passe a la deuxieme page en incrementant le premier numero
-            item[0] = item[0] + 1
+            
+             # Save the modified PDF
+            doc.save("out_temp/" + os.path.basename(self.paths_to_duplicated_pages[i]))
+            doc.close()   
+
+
+    
+    def three_per_page(self):
+        # Récupérer les paramètres de style
+        #font_family = self.config["font_family"]
+        font_size = self.config["font_size"]
+        #font_weight = "bold" if self.config["bold"] else "normal"
+        #font_slant = "italic" if self.config["italic"] else "roman"
+
+        # Créer une couleur avec les paramètres
+        #color = self.config["font_color"]
+
+        # Créer le dossier temporaire si nécessaire
+        output_dir = "out_temp"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
+        start_number = self.config["start"]  # Numéro de départ
+
+
+        #document temporaire à numeroter
+        doc = None
+
+        #boucler sur les nombre de pages
+        for i in range(number_of_pages):
+
+            item = [start_number, start_number + number_of_pages, start_number + number_of_pages * 2] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
+
+            item_index = 0 # le selecteur du numero a ecrir via son index dans le tableau item
+
+
+            #ouvrir le pdf
+            doc = self.open_pdf(self.paths_to_duplicated_pages[i])
+
+            #faire une projection de coordonees du canvas vers des point sur pdf
+            self.project_canvas_coords_to_pdf_points()
+            
+            #boucler sur les coordonees en points
+            for x, y in self.projected_coordinates:
+            
+                # Insert the text on the PDF
+                page = doc[0]
+                page.insert_text((x, y), self.add_leading_zeros(item[item_index]), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
+            
+                item_index = item_index + 1 # on incremente l'index
+            
+            start_number = start_number + 1 # on incremente le numero de depart
+
+            
+             # Save the modified PDF
+            doc.save("out_temp/" + os.path.basename(self.paths_to_duplicated_pages[i]))
             doc.close()   
 
 
@@ -378,7 +420,10 @@ class Drawer:
         # # Créer une couleur avec les paramètres
         # color = self.config["font_color"]
 
-        
+        # Créer le dossier temporaire si nécessaire
+        output_dir = "out_temp"
+        os.makedirs(output_dir, exist_ok=True)
+
         doc = None
 
         item = 0 # cette variable contien le premier chiffre qui sera ecrit sur des coordonees precis
@@ -402,7 +447,7 @@ class Drawer:
             
                 # Insert the text on the PDF
                 page = doc[0]
-                page.insert_text((x, y), str(item), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
+                page.insert_text((x, y), self.add_leading_zeros(item), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
             
                 item = item + 1 # on obtien le deuxieme nompbre par le premier nombre + 1
 
