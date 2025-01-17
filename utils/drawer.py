@@ -20,7 +20,8 @@ class Drawer:
         self.is_loaded_file = False
     def project_canvas_coords_to_pdf_points(self, screen_dpi=96):
         """
-        Projects coordinates from a canvas (which already has a PDF) onto a new PDF file.
+        Projects coordinates from a canvas (which already has a PDF) onto a new 
+        coordinate in point for new PDF file.
         
         Args:
             canvas (object): A canvas object that already has the PDF drawn on it.
@@ -35,9 +36,15 @@ class Drawer:
         pdf_copy_path = self.paths_to_duplicated_pages[0]
         coords_on_canvas = self.coordinates  # Coordinates on the canvas in pixels
 
-        # Get the canvas dimensions
-        canvas_width = canvas.winfo_width()  # Canvas width in pixels
-        canvas_height = canvas.winfo_height()  # Canvas height in pixels
+        # Get the canvas dimensions in point
+        # point = (pixel/DPI)*72
+        canvas_width_in_point = (canvas.winfo_width()/96) * 72  # Canvas width in pixels
+        canvas_height_in_point =  (canvas.winfo_height()/96) * 72  # Canvas height in pixels
+
+
+        print("canvas size :")
+        print(canvas_width_in_point)
+        print(canvas_height_in_point)
 
         # Open the PDF file with fitz
         pdf_document = fitz.open(pdf_copy_path)
@@ -48,12 +55,14 @@ class Drawer:
         # Get the dimensions of the PDF page in points (1 point = 1/72 inch)
         pdf_width, pdf_height = page.rect.width, page.rect.height
 
-        # Scale factors between the canvas size and the PDF page size
-        scale_x = pdf_width / canvas_width
-        scale_y = pdf_height / canvas_height
+        print("pdf size :")
+        print(pdf_width)
+        print(pdf_height)
 
-        # Conversion factor from pixels to points (1 point = 1/72 inch)
-        px_to_pt_factor = 72 / screen_dpi
+        # Scale factors between the canvas size and the PDF page size
+        scale_x = pdf_width / canvas_width_in_point
+        scale_y = pdf_height / canvas_height_in_point
+
 
         # Initialize a list to store the new coordinates after projection
         projected_coords = []
@@ -61,8 +70,9 @@ class Drawer:
         # Project each coordinate
         for (x, y) in coords_on_canvas:
             # Project the canvas coordinates to PDF space and convert to points
-            pdf_x = x * scale_x * px_to_pt_factor
-            pdf_y = y * scale_y * px_to_pt_factor
+            # on convertis chaque pixel en poit via (pixel/96)*72 multiplier par le facteur de scaling
+            pdf_x = ((x/96)*72)* scale_x 
+            pdf_y = ((y/96)*72)* scale_y
 
             # Add the projected coordinates to the new list
             projected_coords.append((pdf_x, pdf_y))
@@ -301,18 +311,15 @@ class Drawer:
     
     def three_per_page(self):
         # Récupérer les paramètres de style
-        font_family = self.config["font_family"]
+        #font_family = self.config["font_family"]
         font_size = self.config["font_size"]
-        font_weight = "bold" if self.config["bold"] else "normal"
-        font_slant = "italic" if self.config["italic"] else "roman"
-  
-        # Créer une police avec les paramètres
-        font = (font_family, font_size, font_weight, font_slant)
+        #font_weight = "bold" if self.config["bold"] else "normal"
+        #font_slant = "italic" if self.config["italic"] else "roman"
 
         # Créer une couleur avec les paramètres
-        color = self.config["font_color"]
+        #color = self.config["font_color"]
 
-        item = [] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
+        item = [3] # ce tavlau contien un nombre x de chiffre qui seront ecrit sur des coordonees precis
         item [0] = self.config["start"] # on initialise la premiere valeur au numero de depart
         item [1] = self.config["start"] # a cette valeur sera ajoutée le nombre de pages du facturier et former le deuxieme nombre
         item [2] = self.config["start"] # a cette valeur sera ajoutée le nombre de pages du facturier x 2 et former le troisieme nombre
@@ -321,24 +328,39 @@ class Drawer:
 
         item_index = 0 # le selecteur du numero a ecrir via son index dans le tableau item
 
+        #document temporaire à numeroter
+        doc = None
+
+
+        number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
+
+
         #boucler sur les nombre de pages
         for i in range(number_of_pages):
-            self.render_pdf_to_canvas(self.paths_to_duplicated_pages[i])
 
-            #boucler sur les coordonees
-            for x, y in self.coordinates:
-                self.canvas.create_text(x, y, text=str(item[item_index]), font=font, fill=color)
-                item_index += 1 # mise a jour du selecteur
+            #ouvrir le pdf
+            doc = self.open_pdf(self.paths_to_duplicated_pages[i])
+
+            #faire une projection de coordonees du canvas vers des point sur pdf
+            self.project_canvas_coords_to_pdf_points()
+            
+            #boucler sur les coordonees en points
+            for x, y in self.projected_coordinates:
+            
+                # Insert the text on the PDF
+                page = doc[0]
+                page.insert_text((x, y), str(item[item_index]), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
+            
                 item[item_index] = item[item_index] + number_of_pages # on obtien le deuxieme nompbre par le premier nombre + le nbr de pages du facturier
 
+                # Save the modified PDF
+                doc.save("out_temp/" + os.path.basename(self.paths_to_duplicated_pages[i]))
+                
+            #on passe a la deuxieme page en incrementant le premier numero
             item[0] = item[0] + 1
+            doc.close()   
 
-            # enregistrement de la page courante en pdf
-            self.save_canvas_to_pdf(self.paths_to_duplicated_pages[i])
 
-            # supprimer le canevas pour la prochaine page
-            self.canvas.destroy()
-            self.canvas = None
 
     def many_per_page(self):
         # Récupérer les paramètres de style
@@ -380,7 +402,7 @@ class Drawer:
             
                 # Insert the text on the PDF
                 page = doc[0]
-                page.insert_text((x, y), str(item), fontsize= int(font_size), color=(100/255, 0/255, 0/255))
+                page.insert_text((x, y), str(item), fontsize= int(font_size), color=(244/255, 32/255, 32/255))
             
                 item = item + 1 # on obtien le deuxieme nompbre par le premier nombre + 1
 
