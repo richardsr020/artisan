@@ -59,10 +59,6 @@ class Drawer:
         canvas_height_in_point =  (canvas.winfo_height()/96) * 72  # Canvas height in pixels
 
 
-        print("canvas size :")
-        print(canvas_width_in_point)
-        print(canvas_height_in_point)
-
         # Open the PDF file with fitz
         pdf_document = fitz.open(pdf_copy_path)
 
@@ -72,9 +68,6 @@ class Drawer:
         # Get the dimensions of the PDF page in points (1 point = 1/72 inch)
         pdf_width, pdf_height = page.rect.width, page.rect.height
 
-        print("pdf size :")
-        print(pdf_width)
-        print(pdf_height)
 
         # Scale factors between the canvas size and the PDF page size
         scale_x = pdf_width / canvas_width_in_point
@@ -464,27 +457,27 @@ class Drawer:
     def start_numbering(self):
 
         if not self.config["start"]:
-            return
+            return False
         
         items_per_page = len(self.coordinates)
 
         if items_per_page == 1:
             self.one_per_page()
-            return
+            return True
 
         if items_per_page == 2:
             self.two_per_page()
-            return
+            return True
         if items_per_page == 3:
             self.three_per_page()
-            return
+            return True
         if items_per_page > 3:
             self.many_per_page()
-            return
+            return True
         
         # Cas non pris en charge
         messagebox.showerror("Erreur", "Unknown invoice configuration")
-        
+        return False
   
 
 # Exemple d'utilisation
