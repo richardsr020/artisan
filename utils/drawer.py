@@ -6,19 +6,33 @@ from PIL import ImageGrab
 from reportlab.pdfgen import canvas
 from tkinter import Toplevel, IntVar, Canvas, PhotoImage, StringVar, BooleanVar, messagebox, colorchooser, Label, Entry, Button, ttk
 
+#dependences personalisés
+from utils.utils import * 
+
 class Drawer:
-    def __init__(self, root, canvas, coordinates, paths_to_duplicated_pages):
+    def __init__(self, root, canvas, coordinates):
         self.root = root
         self.canvas = canvas
         self.coordinates = coordinates
         self.projected_coordinates = None
-        self.paths_to_duplicated_pages = paths_to_duplicated_pages
+        self.paths_to_duplicated_pages = None
 
         # Déclaration des attributs de classe
-        self.config = {}
+        self.config = None
         self.out_temp = "out_temp"
         self.is_loaded_file = False
 
+        self.wf_config_data = None
+
+    
+    def load_config(self):
+        self.wf_config_data = read_workflow_config()
+        self.paths_to_duplicated_pages = self.wf_config_data[1]
+        self.config = self.wf_config_data[0]
+
+
+
+    
     def add_leading_zeros(self,number):
         """
         Ajoute deux zéros devant le nombre s'il est inférieur à 100.
@@ -91,96 +105,6 @@ class Drawer:
         self.projected_coordinates = projected_coords
     
 
-
-    def open(self):
-        """
-        Ouvre une fenêtre de configuration au centre de la fenêtre principale pour
-        permettre à l'utilisateur de définir divers attributs de style et d'intervalle.
-        """
-
-        # Vérifications initiales
-        if not self.paths_to_duplicated_pages:
-            messagebox.showerror("Erreur", "Duplicate page before")
-            return
-
-        if not self.coordinates:
-            messagebox.showerror("Erreur", "Undefined number area")
-            return
-
-        # Création de la fenêtre de configuration
-        config_window = Toplevel(self.root)
-        config_window.title("Config interval")
-
-        # Centrer la fenêtre de configuration
-        config_window.geometry(f"400x400+{self.root.winfo_x() + 100}+{self.root.winfo_y() + 100}")
-
-        # Valeurs par défaut
-        default_config = {
-            "start": "1",  # Numéro de départ par défaut
-            "font_size": "12",  # Taille de police par défaut
-            "font_family": "Arial",  # Famille de police par défaut
-            "font_color": "#000000",  # Couleur de police par défaut
-            "italic": False,  # Style italique par défaut
-            "bold": False,  # Style gras par défaut
-        }
-
-        # Initialiser le dictionnaire de configuration
-        self.config = default_config.copy()
-
-        # Configuration des numéros et disposition
-        Label(config_window, text="Start:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        start_var = StringVar(value=self.config["start"])
-        Entry(config_window, textvariable=start_var).grid(row=0, column=1, padx=5, pady=5)
-
-        # Configuration des styles de police
-        Label(config_window, text="Font Size:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        font_size_var = StringVar(value=self.config["font_size"])
-        Entry(config_window, textvariable=font_size_var).grid(row=1, column=1, padx=5, pady=5)
-
-        Label(config_window, text="Font Family:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        font_choices = ["Courier","Helvetica", "Times-Roman", "Symbol", "ZapfDingbats"]
-        font_family_var = StringVar(value=self.config["font_family"])
-        ttk.Combobox(config_window, textvariable=font_family_var, values=font_choices, state="readonly").grid(row=2, column=1, padx=5, pady=5)
-
-        Label(config_window, text="Font Color:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        font_color_var = StringVar(value=self.config["font_color"])
-        color_display = Label(config_window, text="  ", bg=font_color_var.get(), relief="sunken", width=10)
-        color_display.grid(row=3, column=1, padx=5, pady=5)
-
-        def choose_color():
-            color_code = colorchooser.askcolor(title="Choisissez une couleur")[1]
-            if color_code:
-                font_color_var.set(color_code)
-                color_display.config(bg=color_code)
-
-        Button(config_window, text="Choose", command=choose_color).grid(row=3, column=2, padx=5, pady=5)
-
-        Label(config_window, text="Styles:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        italic_var = BooleanVar(value=self.config["italic"])
-        ttk.Checkbutton(config_window, text="Italic", variable=italic_var).grid(row=4, column=1, sticky="w")
-
-        bold_var = BooleanVar(value=self.config["bold"])
-        ttk.Checkbutton(config_window, text="Bold", variable=bold_var).grid(row=4, column=2, sticky="w")
-
-        # Actions
-        def save_configuration():
-            self.config.update({
-                "start": int(start_var.get()),
-                "font_size": font_size_var.get(),
-                "font_family": font_family_var.get(),
-                "font_color": font_color_var.get(),
-                "italic": italic_var.get(),
-                "bold": bold_var.get(),
-            })
-            config_window.destroy()
-
-        def cancel_configuration():
-            config_window.destroy()
-
-        Button(config_window, text="Save", command=save_configuration).grid(row=5, column=0, columnspan=2, pady=10)
-        Button(config_window, text="Cancel", command=cancel_configuration).grid(row=5, column=2, columnspan=2, pady=10)
-
-
     
     def open_pdf(self, path):
         """
@@ -239,14 +163,7 @@ class Drawer:
 
 
     def one_per_page(self):
-        # Récupérer les paramètres de style
-        #font_family = self.config["font_family"]
-        font_size = self.config["font_size"]
-        #font_weight = "bold" if self.config["bold"] else "normal"
-        #font_slant = "italic" if self.config["italic"] else "roman"
 
-        # Créer une couleur avec les paramètres
-        #color = self.config["font_color"]
 
         # Créer le dossier temporaire si nécessaire
         output_dir = "out_temp"
@@ -292,6 +209,7 @@ class Drawer:
 
     
     def two_per_page(self):
+       
         # Récupérer les paramètres de style
         #font_family = self.config["font_family"]
         font_size = self.config["font_size"]
@@ -345,6 +263,7 @@ class Drawer:
 
     
     def three_per_page(self):
+
         # Récupérer les paramètres de style
         #font_family = self.config["font_family"]
         font_size = self.config["font_size"]
@@ -398,6 +317,7 @@ class Drawer:
 
 
     def many_per_page(self):
+
         # Récupérer les paramètres de style
         #font_path = "fonts/arial/ARIAL.TTF"  # Chemin vers votre fichier de police
         #font_family = fitz.open_font(font_path)  # Charger le fichier de police
@@ -456,6 +376,9 @@ class Drawer:
 
     def start_numbering(self):
 
+        #charger le fichier de configuration pour le numeroteur
+        self.load_config()
+        
         if not self.config["start"]:
             return False
         

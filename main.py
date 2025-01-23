@@ -10,6 +10,7 @@ import pikepdf
 #dependences personalisés
 from utils.utils import * 
 from utils.drawer import * 
+from utils.workflow import *
 
 
 
@@ -31,16 +32,11 @@ class PDFCanvasRenderer:
         self.output_path = "out/"
         self.paths_to_duplicated_pages = []
         self.coordinates = []  # Liste pour stocker les coordonnées des clics
-        self.interval = {"start": 0, "end": 0}  # Intervalle pour numéroter les annotations
-        self.num_pages_to_duplicate = 1  # Nombre de duplications de la page
-        self.font_settings = {}
-
+        
         # signatures de fonction apres execution de celle-ci
         self.is_file_loaded = False
         self.is_numbering_done = False
         self.is_merged_and_protect_pdfs = False
-
-       
 
         # Graphique
         self.root = None  # Fenêtre principale Tkinter
@@ -51,7 +47,10 @@ class PDFCanvasRenderer:
 
 
     ### initialisation des outils ###
-        self.drawer = None
+        self.drawer = None   # attribut qui initialise l'objet Drawer
+        self.workflow = None # attribut qui initialise l'objet workflowConfig
+        self.wf_config_data = None
+        self.drawer_config_data = None
 
 
 
@@ -134,7 +133,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon3"],
-            command=self.config_and_duplicate,
+            command=self.workflow_config,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -142,7 +141,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon4"],
-            command=self.config_and_numbering,
+            command = self.drawer_start,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -326,121 +325,32 @@ class PDFCanvasRenderer:
     
     
     
-    def config_and_duplicate (self):
-        """
-        Ouvre une fenêtre de configuration au centre de la fenêtre principale pour
-        permettre à l'utilisateur de définir les attributs `interval` et `num_pages_to_duplicate`.
-        """
-        # verifier la presence d'un fichier ouvert
+    def workflow_config(self):
+
         if not self.is_file_loaded:
-            messagebox.showerror("Erreur", "The file must be load before")
+            # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+            messagebox.showerror("Erreur", "No file loaded")
             return
+        self.workflow = WorkflowConfig(self.root, self.input_pdf_path )
+        self.workflow.open_config_window()
+
+
         
         
-        
-        config_window = Toplevel(self.root)
-        config_window.title("Duplicate_page")
-
-        # Centrer la fenêtre de configuration
-        config_window.geometry(f"250x80+{self.root.winfo_x() + 200}+{self.root.winfo_y() + 200}")
-        
-        num_pages_var = IntVar(value=self.num_pages_to_duplicate)
-
-        Entry(config_window, textvariable=num_pages_var).grid(row=2, column=0, padx=5, pady=5 )
-        Label(config_window, text="pages").grid(row=2, column=1, padx=5, pady=5)
 
 
 
-        def duplicate_pdf_page(num_duplicates = 50):
-            """
-            Duplique une page PDF x fois et stocke les pages dupliquées dans un dossier temporaire.
-
-            Args:
-                self.pdf_path (str): Le chemin du fichier PDF source (doit contenir une seule page).
-                output_dir (str): Le dossier où les fichiers dupliqués seront stockés (par défaut 'temp').
-                num_duplicates (int): Nombre de duplications à effectuer (par défaut 10).
-
-            Returns:
-                list: Liste des chemins des fichiers PDF dupliqués.
-            """
-            output_dir = "temp"  # par défaut, les pages dupliquées seront stockées dans le dossier 'temp'
-
-            if self.paths_to_duplicated_pages:
-                self.paths_to_duplicated_pages = [] # vider la liste des path temporaires
-                clear_folder("temp/") # clear le dossier temp
-                self.pdf_path = self.input_pdf_path # rendre le path du pdf d'origine au self.pdf_path
-
-            # Vérifie si le fichier d'entrée existe
-            if not os.path.exists(self.pdf_path):
-                messagebox.showerror("Erreur", f"{self.pdf_path} do not exist or deleted")
-                return
-
-            # Crée le dossier temporaire s'il n'existe pas
-            os.makedirs(output_dir, exist_ok=True)
-
-            # Lis le fichier PDF source
-            reader = PdfReader(self.pdf_path)
-            if len(reader.pages) != 1:
-                messagebox.showerror("Erreur", "The file must contain 1 page ")
-                return
-
-            # Prépare la liste des chemins des fichiers dupliqués
-            duplicated_files = []
-            new_temp_path = output_dir + "/page_1.pdf"
-
-            # Duplique la page et sauvegarde chaque copie
-            for i in range(1, num_duplicates + 1):
-                writer = PdfWriter()
-                writer.add_page(reader.pages[0])  # Ajoute la page unique au nouvel objet PDF
-
-                # Définit le chemin de sortie pour chaque duplication
-                output_path = os.path.join(output_dir, f"page_{i}.pdf")
-                with open(output_path, "wb") as output_file:
-                    writer.write(output_file)
-
-                duplicated_files.append(output_path)
-            
-            self.paths_to_duplicated_pages = duplicated_files
-            # charcger la page_1 du pdf a partir du dossier temporaire pour travailler dessus
-            self.pdf_path = new_temp_path
-            # recharger la page avec le nouveau pdf du dossier temporaire
-            self.reload_page
-
-
-
-        def save_and_start_duplicate():
-            # Exiger une valeure superieur à 1 pour dupliquer
-            if num_pages_var.get() == 1 :
-                messagebox.showerror("Erreur", "unable to duplicate once")
-                return
-            
-            self.num_pages_to_duplicate = num_pages_var.get()
-
-            duplicate_pdf_page(self.num_pages_to_duplicate)
-            messagebox.showinfo("Succès", f"{self.num_pages_to_duplicate} pages duplicated")
-            config_window.destroy()
-
-        Button(config_window, text="Duplicate", command = save_and_start_duplicate).grid(row=3, column=0, columnspan=2, pady=10)
-
-
-    
-    
-    
-    
-    def config_and_numbering(self):
+    def drawer_start(self):
         """
         Ouvre une fenêtre de configuration au centre de la fenêtre principale pour
         permettre à l'utilisateur de définir les attributs  `font_size`,
         `font_family`, `font_color`, `italic`, et `bold`.
         """
-        self.drawer = Drawer(self.root, self.canvas, self.coordinates, self.paths_to_duplicated_pages)
-        self.drawer.open()
-
-
-
-
-
-    def drawer_start(self):
+        if not self.coordinates:
+            messagebox.showerror("Erreur", "Please marks before ")
+            return
+        
+        self.drawer = Drawer(self.root, self.canvas, self.coordinates)
         
            # Appeler le méthode de numerotation du Drawer et vérifier le résultat
         if self.drawer.start_numbering():
