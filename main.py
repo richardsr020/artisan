@@ -1,21 +1,18 @@
 #dependences
 import os
 import fitz  # PyMuPDF
-from PyPDF2 import PdfReader, PdfWriter,PdfMerger
-from tkinter import Tk, Canvas, messagebox, PhotoImage, Button, Toplevel, Label, Entry, IntVar, Frame, CENTER
+from PyPDF2 import PdfReader, PdfMerger
+from tkinter import Tk, Canvas, messagebox, PhotoImage, Button, Toplevel, Frame, CENTER
 from PIL import Image, ImageTk
-from tkinter import font, filedialog, IntVar, StringVar, BooleanVar,colorchooser, ttk
+from tkinter import filedialog
 import pikepdf
+import base64
 
 #dependences personalisés
 from utils.utils import * 
 from utils.drawer import * 
 from utils.workflow import *
-
-
-
-
-
+from utils.subscription import *
 
 
 class PDFCanvasRenderer:
@@ -51,6 +48,11 @@ class PDFCanvasRenderer:
         self.workflow = None # attribut qui initialise l'objet workflowConfig
         self.wf_config_data = None
         self.drawer_config_data = None
+        self.subscription = None
+
+        # Initialisation des outils
+
+        self.init_subscription_()
 
 
 
@@ -58,9 +60,43 @@ class PDFCanvasRenderer:
 
 
 
+    def init_subscription_(self):
+        """
+        Initialise les composants graphiques pour la gestion des abonnements
+        """
+        self.subscription = Subscription(self.root)
+        
+    
+   
+   
+   
+    def create_subscriptionn(self):
+                # Ouvrir la boîte de dialogue pour sélectionner un fichier .txt
+        file_path = filedialog.askopenfilename()
+
+        # Vérifier si un fichier a été sélectionné
+        if file_path:
+            try:
+                # Lire le contenu du fichier et le stocker dans la variable `key`
+                with open(file_path, "rb") as file:
+                    key = file.read()
+                    
+
+                # Afficher un message de succès
+                messagebox.showinfo("Succès", "Your key is ready click on OK !")
+
+                # Lancer le reabonnement
+                self.subscription.recharge(key)
+
+            except Exception as e:
+                messagebox.showerror("Erreur", f"unable to read the file: {e}")
+        else:
+            messagebox.showwarning("Annulation", "No file selected.")
 
 
-
+    
+    
+    
     def create_main_window(self):
         """
         Initialise la fenêtre principale et les composants graphiques.
@@ -85,19 +121,16 @@ class PDFCanvasRenderer:
 
 
     
-    
-    
     def load_icons(self):
         """
         Charge les icônes à partir du dossier 'icons' et les stocke dans un dictionnaire.
         """
-        icon_names = ["icon1", "icon2", "icon3", "icon4", "icon5", "icon6"]
+        icon_names = ["icon1", "icon2", "icon3", "icon4", "icon5", "icon6","icon7","icon8"]
         for icon_name in icon_names:
             icon_path = os.path.join("icons", f"{icon_name}.png")
             image = Image.open(icon_path)
             self.icons[icon_name] = ImageTk.PhotoImage(image.resize((30, 30)))
 
-    
     
     
     
@@ -161,10 +194,96 @@ class PDFCanvasRenderer:
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
+
+        Button(
+            self.sidebar,
+            image=self.icons["icon7"],
+            command= self.create_subscriptionn,
+            bg="#D3D3D3",
+            relief="flat",
+        ).pack(pady=5)
         
+        Button(
+            self.sidebar,
+            image=self.icons["icon8"],
+            command= self.merge_and_protect_pdfs,
+            bg="#D3D3D3",
+            relief="flat",
+        ).pack(pady=5)
 
     
     
+    
+    def display_pdf_on_canvas(self, pdf_path):
+        """
+        Affiche un fichier PDF sur le canevas Tkinter.
+        
+        Args:
+            pdf_path (str): Chemin du fichier PDF à afficher.
+        """
+        # Ouvrir le fichier PDF
+
+        # verifier si le fichier exist
+
+
+        if not os.path.exists(pdf_path):
+            messagebox.showerror("Erreur", "The file does not exist")
+            return
+        
+        if not pdf_path.lower().endswith('.pdf'):
+            messagebox.showerror("Erreur", "Pdf file is required")
+            return
+
+        try:
+                
+            doc = fitz.open(pdf_path)
+            page = doc[0]
+
+            #verification si le pdf contien une page
+            reader = PdfReader(self.pdf_path)
+            if len(reader.pages) != 1:
+                messagebox.showerror("Erreur", "The file must contain only 1 page")
+                return
+            #conversion pdf en pixel
+            pix = page.get_pixmap()
+            width, height = pix.width, pix.height
+
+            # Calculer le ratio d'ajustement pour limiter la taille si nécessaire
+            max_width, max_height = self.root.winfo_screenwidth() - 100, self.root.winfo_screenheight() - 100
+            scale_factor = min(max_width / width, max_height / height, 1)
+
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+
+            # Créer ou réutiliser le canevas
+            if not hasattr(self, "canvas") or self.canvas is None:
+                self.canvas = Canvas(self.root, bg="white")
+                self.canvas.pack(side="right", fill="both", expand=True)
+                self.track_clicks()
+            else:
+                # Effacer tout contenu existant du canevas
+                self.canvas.delete("all")
+
+            # Redimensionner et centrer le canevas
+            self.canvas.config(width=new_width, height=new_height)
+            self.canvas.pack_propagate(False)
+            self.canvas.place(relx=0.5, rely=0.5, anchor="center")
+
+            # Redimensionner l'image PDF en utilisant get_pixmap() avec un facteur d'échelle
+            pix_resized = page.get_pixmap(matrix=fitz.Matrix(scale_factor, scale_factor))
+
+            img = PhotoImage(data=pix_resized.tobytes("ppm"))
+            self.canvas.create_image(0, 0, image=img, anchor="nw")
+            self.canvas.img = img  # Référence nécessaire pour éviter que l'image ne soit libérée
+
+            # Ajuster la taille de la fenêtre principale
+            self.root.geometry(f"{new_width + 100}x{new_height + 100}")
+
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Failed to open :'{pdf_path}'")
+            return
+
+
     
     
     
@@ -172,6 +291,10 @@ class PDFCanvasRenderer:
         """
         Efface les coordonnées actuelles.
         """
+        if not self.is_file_loaded:
+        # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+            messagebox.showerror("Erreur", "No file loaded")
+            return
         
         self.coordinates = []
 
@@ -183,45 +306,14 @@ class PDFCanvasRenderer:
             # Vérification si le fichier existe dans le dossier out_temp
             if os.path.exists(file_path):
                 self.pdf_path = file_path  # chargement du nouveau chemin dans self.pdf_path
+        
+        # Afficher le fichier PDF sur le canevas
+        self.display_pdf_on_canvas(self.pdf_path)
 
 
-        # recharger la page
-        doc = fitz.open(self.pdf_path)
-        page = doc[0]
-        pix = page.get_pixmap()
-        width, height = pix.width, pix.height
-
-        # Calculer le ratio d'ajustement pour limiter la taille si nécessaire
-        max_width, max_height = self.root.winfo_screenwidth() - 100, self.root.winfo_screenheight() - 100
-        scale_factor = min(max_width / width, max_height / height, 1)
-
-        new_width = int(width * scale_factor)
-        new_height = int(height * scale_factor)
-
-        # Créer un canevas pour afficher le PDF et l'ajouter à la fenêtre principale
-        self.canvas = Canvas(self.root, bg="white")
-        self.canvas.pack(side="right", fill="both", expand=True)
-        self.track_clicks()
-
-        # Redimensionner le canevas
-        self.canvas.config(width=new_width, height=new_height)
-        self.canvas.pack_propagate(False)
-
-        # Centrer le canevas
-        self.canvas.place(relx=0.5, rely=0.5, anchor="center")
-
-        # Redimensionner l'image PDF en utilisant get_pixmap() avec un facteur d'échelle
-        pix_resized = page.get_pixmap(matrix=fitz.Matrix(scale_factor, scale_factor))
-
-        img = PhotoImage(data=pix_resized.tobytes("ppm"))
-        self.canvas.create_image(0, 0, image=img, anchor="nw")
-        self.canvas.img = img
-
-        # Ajuster la fenêtre principale
-        self.root.geometry(f"{new_width + 100}x{new_height + 100}")
+       
 
         
-    
     
     
     
@@ -231,8 +323,14 @@ class PDFCanvasRenderer:
         """
         Rendu de la première page du PDF sur le canevas Tkinter et ajustement des dimensions.
         """
+        if not self.subscription.is_user_registered():
+            self.subscription.show_register_window()
+            return
+
         def select_file():
-            """"""
+            """
+            Ouvre une boîte de dialogue pour sélectionner un fichier PDF.
+            """
             # Crée une fenêtre Toplevel temporaire
             file_explorer = Toplevel(self.root)
             file_explorer.title("Configuration")
@@ -241,61 +339,25 @@ class PDFCanvasRenderer:
             
             try:
                 # Ouvre l'explorateur de fichiers
-                file_path = filedialog.askopenfilename(parent=file_explorer, title="Sélectionnez un pdf")
+                file_path = filedialog.askopenfilename(parent=file_explorer, title="Sélectionnez un PDF")
                 
-                # Affiche le chemin sélectionné ou un message si aucun fichier n'est sélectionné
-                if file_path:
-                    return file_path
-                else:
-                    return None
+                # Retourne le chemin sélectionné ou None si aucun fichier n'est sélectionné
+                return file_path if file_path else None
             finally:
                 # Détruit la fenêtre Toplevel pour libérer les ressources
                 file_explorer.destroy()
-            
+        
         # Ouvre une boîte de dialogue pour sélectionner un fichier
         self.pdf_path = select_file()
+        if not self.pdf_path:
+            return  # Sortir si aucun fichier n'est sélectionné
+        
         self.input_pdf_path = self.pdf_path
 
-        doc = fitz.open(self.pdf_path)
-        page = doc[0]
-        pix = page.get_pixmap()
-        width, height = pix.width, pix.height
-
-        # Calculer le ratio d'ajustement pour limiter la taille si nécessaire
-        max_width, max_height = self.root.winfo_screenwidth() - 100, self.root.winfo_screenheight() - 100
-        scale_factor = min(max_width / width, max_height / height, 1)
-
-        new_width = int(width * scale_factor)
-        new_height = int(height * scale_factor)
-
-        # Créer un canevas pour afficher le PDF et l'ajouter à la fenêtre principale
-        self.canvas = Canvas(self.root, bg="white")
-        self.canvas.pack(side="right", fill="both", expand=True)
-        self.track_clicks()
-
-        # Redimensionner le canevas
-        self.canvas.config(width=new_width, height=new_height)
-        self.canvas.pack_propagate(False)
-
-        # Centrer le canevas
-        self.canvas.place(relx=0.5, rely=0.5, anchor="center")
-
-        # Redimensionner l'image PDF en utilisant get_pixmap() avec un facteur d'échelle
-        pix_resized = page.get_pixmap(matrix=fitz.Matrix(scale_factor, scale_factor))
-
-        img = PhotoImage(data=pix_resized.tobytes("ppm"))
-        self.canvas.create_image(0, 0, image=img, anchor="nw")
-        self.canvas.img = img
-
-        #marquer le fichier comme etant deja chqrgé
-        if self.canvas:
-            self.is_file_loaded = True
-
-        # Ajuster la fenêtre principale
-        self.root.geometry(f"{new_width + 100}x{new_height + 100}")
+        # Afficher le fichier PDF sur le canevas
+        self.display_pdf_on_canvas(self.pdf_path)
 
 
-    
     
     
     
@@ -314,8 +376,8 @@ class PDFCanvasRenderer:
             self.canvas.create_oval(
                 x - radius, y - radius, x + radius, y + radius, outline="red"
             )
-            print(f"Clic à : ({x}, {y})")
-            print(f"Coordonnées enregistrées : {self.coordinates}")
+            # print(f"Clic à : ({x}, {y})")
+            # print(f"Coordonnées enregistrées : {self.coordinates}")
 
         self.canvas.bind("<Button-1>", on_canvas_click)
 
