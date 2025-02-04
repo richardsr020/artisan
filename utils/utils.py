@@ -2,6 +2,8 @@
 import os
 import shutil
 import json
+from tkinter import messagebox
+
 
 def clear_folder(folder_path):
     if not os.path.exists(folder_path):
@@ -21,8 +23,6 @@ def clear_folder(folder_path):
 
 
 
-
-
 def save_workflow_config(*collections):
     """
     Crée ou vide le fichier `workflow_config.json` pour y sauvegarder les collections fournies.
@@ -37,9 +37,9 @@ def save_workflow_config(*collections):
         # Ouvre le fichier en mode écriture (cela vide son contenu s'il existe)
         with open(file, "w") as json_file:
             json.dump(combined_data, json_file, indent=4)  # Sauvegarde les données combinées dans le fichier JSON
-        print(f"Data has been saved to '{file}'.")
+        
     except Exception as e:
-        print(f"Error while saving data: {e}")
+        messagebox.showerror("Erreur", "Json: somthing went wrong")
 
 
 def read_workflow_config():
@@ -58,11 +58,11 @@ def read_workflow_config():
         # Lit et charge le contenu du fichier JSON
         with open(file, "r") as json_file:
             data = json.load(json_file)
-        print(f"Data has been loaded from '{file}'.")
+        
         return data
     except json.JSONDecodeError as e:
-        print(f"JSON file error: {e}")
+        messagebox.showerror("Erreur", "Json: somthing went wrong")
         return None
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        messagebox.showerror("Erreur", "Json: somthing went wrong")
         return None

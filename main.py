@@ -96,7 +96,11 @@ class PDFCanvasRenderer:
 
     
     
+    def get_user_subscription_status(self):
+        self.subscription.check_and_show_window()
     
+    
+   
     def create_main_window(self):
         """
         Initialise la fenêtre principale et les composants graphiques.
@@ -125,7 +129,7 @@ class PDFCanvasRenderer:
         """
         Charge les icônes à partir du dossier 'icons' et les stocke dans un dictionnaire.
         """
-        icon_names = ["icon1", "icon2", "icon3", "icon4", "icon5", "icon6","icon7","icon8"]
+        icon_names = ["icon0","icon1", "icon2", "icon3", "icon4", "icon5","icon6","icon7"]
         for icon_name in icon_names:
             icon_path = os.path.join("icons", f"{icon_name}.png")
             image = Image.open(icon_path)
@@ -147,6 +151,13 @@ class PDFCanvasRenderer:
         self.load_icons()
 
         # Ajouter les boutons avec leurs icônes et commandes respectives
+        Label(
+            self.sidebar,
+            image=self.icons["icon0"],
+            bg="#D3D3D3", 
+        ).pack(pady=5)
+
+
         Button(
             self.sidebar,
             image=self.icons["icon1"],
@@ -179,10 +190,11 @@ class PDFCanvasRenderer:
             relief="flat",
         ).pack(pady=5)
 
+
         Button(
             self.sidebar,
             image=self.icons["icon5"],
-            command= self.drawer_start,
+            command= self.merge_and_protect_pdfs,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -190,14 +202,6 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon6"],
-            command= self.merge_and_protect_pdfs,
-            bg="#D3D3D3",
-            relief="flat",
-        ).pack(pady=5)
-
-        Button(
-            self.sidebar,
-            image=self.icons["icon7"],
             command= self.create_subscriptionn,
             bg="#D3D3D3",
             relief="flat",
@@ -205,8 +209,8 @@ class PDFCanvasRenderer:
         
         Button(
             self.sidebar,
-            image=self.icons["icon8"],
-            command= self.merge_and_protect_pdfs,
+            image=self.icons["icon7"],
+            command= self.get_user_subscription_status,
             bg="#D3D3D3",
             relief="flat",
         ).pack(pady=5)
@@ -279,6 +283,8 @@ class PDFCanvasRenderer:
             # Ajuster la taille de la fenêtre principale
             self.root.geometry(f"{new_width + 100}x{new_height + 100}")
 
+            self.is_file_loaded = True
+
         except Exception as e:
             messagebox.showerror("Erreur", f"Failed to open :'{pdf_path}'")
             return
@@ -306,6 +312,8 @@ class PDFCanvasRenderer:
             # Vérification si le fichier existe dans le dossier out_temp
             if os.path.exists(file_path):
                 self.pdf_path = file_path  # chargement du nouveau chemin dans self.pdf_path
+            else:
+                self.pdf_path = "temp/page_1.pdf"
         
         # Afficher le fichier PDF sur le canevas
         self.display_pdf_on_canvas(self.pdf_path)
@@ -316,6 +324,10 @@ class PDFCanvasRenderer:
         
     
     
+    def count_pdf_in_directory(self, directory):
+        return sum(1 for file in os.listdir(directory) if file.endswith('.pdf'))
+
+
     
     
     
@@ -393,6 +405,7 @@ class PDFCanvasRenderer:
             # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
             messagebox.showerror("Erreur", "No file loaded")
             return
+        
         self.workflow = WorkflowConfig(self.root, self.input_pdf_path )
         self.workflow.open_config_window()
 
@@ -424,6 +437,8 @@ class PDFCanvasRenderer:
       
 
 
+
+
     def clean_out_temp_folder(self):
         """
         Vide le contenu du dossier spécifié, en supprimant tous les fichiers et sous-dossiers.
@@ -448,6 +463,8 @@ class PDFCanvasRenderer:
             messagebox.showerror("Erreur", "folder not found")
 
     
+
+
     def merge_and_protect_pdfs(self):
         """
         Fusionne tous les fichiers PDF d'un dossier en un seul fichier PDF,
@@ -459,11 +476,24 @@ class PDFCanvasRenderer:
         :param password: Mot de passe pour protéger le fichier PDF.
         """
 
+        if not self.is_file_loaded:
+            # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+            messagebox.showerror("Erreur", "No file loaded")
+            return
+
 
         input_folder="out_temp"
         output_folder="invoice"
         output_filename= os.path.basename(self.input_pdf_path) 
-        password="123"
+        password="merged_file_password"
+
+        count_file_in_input_directory = self.count_pdf_in_directory(input_folder)
+
+        if not count_file_in_input_directory :
+            messagebox.showerror("Erreur", "launch numbering befor saving")
+            return
+        #decrementer le quota d'utilisation
+        self.subscription.decrement_usage_limit(count_file_in_input_directory)
 
 
         # Vérifier si le dossier source existe
@@ -491,10 +521,10 @@ class PDFCanvasRenderer:
         # Fusionner les fichiers PDF
         merger = PdfMerger()
         try:
+
             for pdf_file in pdf_files:
                 file_path = os.path.join(input_folder, pdf_file)
                 merger.append(file_path)
-                
             
             # Écrire le fichier fusionné temporaire
             merger.write(temp_output_file)

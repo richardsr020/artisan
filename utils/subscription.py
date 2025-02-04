@@ -43,6 +43,7 @@ class Subscription:
         self.conn.commit()
 
 
+    
     def convert_private_key_to_pkcs8(self, private_key):
         """Convertit la clé privée en format PKCS#8 pour une meilleure gestion"""
         return private_key.private_bytes(
@@ -51,6 +52,8 @@ class Subscription:
             encryption_algorithm=serialization.NoEncryption()
         )
 
+    
+    
     def register_user(self, phone, email):
         """Génère une paire de clés RSA et enregistre un nouvel utilisateur dans la table USER"""
         private_key = rsa.generate_private_key(
@@ -75,6 +78,8 @@ class Subscription:
         except sqlite3.IntegrityError:
             messagebox.showerror("Erreur", "Ce numéro est déjà inscrit!")
 
+    
+    
     def recharge(self, encrypted_message):
             """Déchiffre le message RSA et met à jour le quota d'abonnement de l'utilisateur"""
             # Recherche de la clé privée pour l'utilisateur
@@ -98,6 +103,8 @@ class Subscription:
             else:
                 messagebox.showerror("Erreur", "Utilisateur non trouvé")
 
+    
+    
     def decrypt_message(self, private_key_pem, encrypted_message):
         """Déchiffre le message RSA en utilisant la clé privée"""
         try:
@@ -119,6 +126,8 @@ class Subscription:
             messagebox.showerror("Erreur", f"Erreur de déchiffrement : {e}")
             return None
 
+    
+    
     def decode_message(self, decrypted_value):
         """Décode la valeur déchiffrée en JSON"""
         try:
@@ -134,6 +143,8 @@ class Subscription:
             messagebox.showerror("Erreur", f"Erreur de décodage JSON : {e}")
             return None
 
+    
+    
     def update_user_quota(self, data):
         """Met à jour le quota d'abonnement de l'utilisateur"""
 
@@ -154,6 +165,8 @@ class Subscription:
         except Exception as e:
             messagebox.showerror("Erreur", f"Something went wrong: {e}")
 
+    
+    
     def store_encrypted_message(self, data):
         """Enregistre le message crypté dans la table 'arguments' après avoir vérifié le hash"""
 
@@ -179,20 +192,22 @@ class Subscription:
             self.conn.commit()
             return True
 
+    
+    
     def show_user_info(self):
         """Affiche les informations de l'utilisateur dans une fenêtre Toplevel"""
-        cursor = self.conn.execute("SELECT phone, email, public FROM user")
+        cursor = self.conn.execute("SELECT phone, email, UsageLimit, public FROM user")
         row = cursor.fetchone()
         
         if row:
             # Création de la fenêtre Toplevel pour afficher les infos
             top = Toplevel(self.root)
-            top.title("Informations Utilisateur")
-            top.geometry("300x150")  # Taille fixe
+            top.title("User Info")
+            top.geometry("500x350")  # Taille fixe
             top.resizable(False, False)  # Désactiver le redimensionnement
                 
             
-            info_text = f"Numéro: {row[0]}\nEmail: {row[1]}"
+            info_text = f"""phone: {row[0]}\nEmail : {row[1]} \nUsage_quota : {row[2]} pages\n\nUser_Adress : \n XXXX-XXXX-XXXX-XXXX \n\nContact us to new get quota : \n Our website : linker.alwaysdata.net \nContactlinker@gmail.com \n Phone : +243 993 900 488 or +243 840149027(whatsapp) """
             
             # Ajout d'un label pour afficher les informations
             Label(top, text=info_text).pack(padx=10, pady=10)
@@ -205,7 +220,7 @@ class Subscription:
                 
 
             # Ajout d'un bouton pour copier les informations
-            Button(top, text="Copy Email et Numéro", command=lambda: copy_info(row[0], row[1])).pack(pady=5)
+            Button(top, text="Copy all", command=lambda: copy_info(row[0], row[1])).pack(pady=5)
             
             # Fonction pour sauvegarder la clé publique dans un fichier à un emplacement spécifique
             def save_address():
@@ -214,12 +229,13 @@ class Subscription:
                 if filepath:  # Si l'utilisateur a sélectionné un emplacement
                     with open(filepath, "w") as f:
                         f.write(row[2])  # Sauvegarde de la clé publique dans le fichier
-                    messagebox.showinfo("Sauvegardé", f"Clé publique sauvegardée dans: {filepath}")
+                    messagebox.showinfo("Successfully", f"Saved Key: {filepath}")
             
             # Ajout d'un bouton "Browse" pour choisir l'emplacement de sauvegarde
-            Button(top, text="get your adress", command=save_address).pack(pady=5)
+            Button(top, text="Save_adress", command=save_address).pack(pady=5)
             
 
+    
     def check_and_show_window(self):
         """Vérifie si l'utilisateur a un compte, si oui, affiche les informations, sinon, l'invite à s'inscrire"""
         if self.is_user_registered():
@@ -227,6 +243,8 @@ class Subscription:
         else:
             self.show_register_window()
 
+    
+    
     def show_register_window(self):
         """Fenêtre d'inscription utilisateur avec un formulaire"""
         if not self.is_user_registered():
@@ -262,6 +280,7 @@ class Subscription:
             root.mainloop()
 
 
+    
     def is_user_registered(self):
         """Vérifie si un utilisateur est déjà inscrit dans la table USER"""
         cursor = self.conn.execute("SELECT COUNT(*) FROM user")
@@ -312,14 +331,19 @@ class Subscription:
         if row:
             if value < row[0]:
                 # Décrémente la valeur du quota d'abonnement
-                self.conn.execute("UPDATE user SET UsageLimit = UsageLimit - ? WHERE phone = ?", (value, row[0]))
+                self.conn.execute("UPDATE user SET UsageLimit = ?", (row[0] - value,))
                 self.conn.commit()
-                messagebox.showinfo("Décrémentation", f"Quota d'abonnement réduit de {value}")
+               
             else:
-                messagebox.showerror("Erreur", "La valeur à décrémenter est supérieure au quota actuel.")
+                remain_quota = self.get_usage_limit()
+                messagebox.showerror("Erreur", f"You have {remain_quota} quota \n you don't have enoth contact our suport to add quota")
+                self.show_user_info()
+
         else:
             messagebox.showerror("Erreur", "Aucun utilisateur trouvé")
 
+    
+    
     def get_usage_limit(self):
         """Récupère la valeur du quota d'abonnement de l'utilisateur"""
         cursor = self.conn.execute("SELECT UsageLimit FROM user")
@@ -335,7 +359,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     
     subscription = Subscription(root)
-    subscription.show_user_info()
+    subscription.decrement_usage_limit(1960)
     print(subscription.get_usage_limit())
 
     root.mainloop()

@@ -65,7 +65,7 @@ fQIDAQAB
 """
     
     phone_number = "0840149027"
-    limit = 2000
+    limit = 100
     email = "example@example.com"  # Placeholder, utiliser l'email de l'utilisateur
 
     # Initialisation du service d'encryption
