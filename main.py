@@ -1,18 +1,22 @@
 #dependences
 import os
+import re
 import fitz  # PyMuPDF
-from PyPDF2 import PdfReader, PdfMerger
-from tkinter import Tk, Canvas, messagebox, PhotoImage, Button, Toplevel, Frame, CENTER
+import pikepdf
+import platform
 from PIL import Image, ImageTk
 from tkinter import filedialog
-import pikepdf
-import base64
+from PyPDF2 import PdfReader, PdfMerger
+from tkinter import Tk, Canvas, messagebox, PhotoImage, Button, Toplevel, Frame, CENTER
+
 
 #dependences personalisés
 from utils.utils import * 
 from utils.drawer import * 
 from utils.workflow import *
 from utils.subscription import *
+from utils.printers import *
+from utils.pdf_viewer import *
 
 
 class PDFCanvasRenderer:
@@ -29,11 +33,14 @@ class PDFCanvasRenderer:
         self.output_path = "out/"
         self.paths_to_duplicated_pages = []
         self.coordinates = []  # Liste pour stocker les coordonnées des clics
+        self.merged_file_name = None # Nom du fichier finale fusioné
+        self.merged_file_password = None # Mot de passe du fichier final fusioné
         
         # signatures de fonction apres execution de celle-ci
         self.is_file_loaded = False
         self.is_numbering_done = False
         self.is_merged_and_protect_pdfs = False
+        
 
         # Graphique
         self.root = None  # Fenêtre principale Tkinter
@@ -48,18 +55,55 @@ class PDFCanvasRenderer:
         self.workflow = None # attribut qui initialise l'objet workflowConfig
         self.wf_config_data = None
         self.drawer_config_data = None
-        self.subscription = None
+        self.subscription = None 
+        self.printer = None # initalisation du systeme d'impression selo l'OS
 
         # Initialisation des outils
 
         self.init_subscription_()
+        self.init_printer_service()
+
+
+
+    def detect_os(self):
+        os_name = platform.system()
+        
+        if os_name == "Windows":
+            return os_name
+
+        elif os_name == "Linux":
+            return os_name
+        else:
+            messagebox.showerror("Erreur", f"{os_name} operating system is not suported.")
+            return
+
+
+    
+    
+    
+    
+    
+    def launch_pdf_viewer(self):
+
+        PDFViewer(self.root, self.merged_file_name, self.merged_file_password)
 
 
 
 
+    
+    def init_printer_service(self):
+        """initialisation de la classe d'impression selon l'OS detecté"""
+        if self.detect_os == "Windows":
+            #self.printer = WindowsPrinterService()
+            messagebox.showerror("Erreur", f"unavailable printing service")
+        elif self.detect_os == "Linux":
+            self.printer = LinuxPrinterService()
+        else:
+            return
 
 
-
+    
+    
     def init_subscription_(self):
         """
         Initialise les composants graphiques pour la gestion des abonnements
@@ -144,7 +188,7 @@ class PDFCanvasRenderer:
         """
         Crée une barre latérale à gauche de la fenêtre principale avec des icônes.
         """
-        self.sidebar = Frame(self.root, bg="#D3D4D4", width=40)
+        self.sidebar = Frame(self.root, bg="#A5A6A6", width=50)
         self.sidebar.pack(side="left", fill="y")
 
         # Charger les icônes
@@ -154,7 +198,7 @@ class PDFCanvasRenderer:
         Label(
             self.sidebar,
             image=self.icons["icon0"],
-            bg="#D3D3D3", 
+            bg="#A5A6A6", 
         ).pack(pady=5)
 
 
@@ -162,32 +206,40 @@ class PDFCanvasRenderer:
             self.sidebar,
             image=self.icons["icon1"],
             command= self.render_pdf_to_canvas,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
         Button(
             self.sidebar,
             image=self.icons["icon2"],
             command=self.reload_page,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
         Button(
             self.sidebar,
             image=self.icons["icon3"],
             command=self.workflow_config,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
         Button(
             self.sidebar,
             image=self.icons["icon4"],
             command = self.drawer_start,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
 
@@ -195,24 +247,30 @@ class PDFCanvasRenderer:
             self.sidebar,
             image=self.icons["icon5"],
             command= self.merge_and_protect_pdfs,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
         Button(
             self.sidebar,
             image=self.icons["icon6"],
             command= self.create_subscriptionn,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
         
         Button(
             self.sidebar,
             image=self.icons["icon7"],
             command= self.get_user_subscription_status,
-            bg="#D3D3D3",
+            bg="#A5A6A6",
             relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
     
@@ -482,10 +540,17 @@ class PDFCanvasRenderer:
             return
 
 
+
+        # Fonction pour extraire le numéro de la page
+        def extract_page_number(filename):
+            match = re.search(r'page_(\d+)\.pdf', filename)
+            return int(match.group(1)) if match else float('inf')  # Utiliser "inf" si pas de numéro
+
+
         input_folder="out_temp"
         output_folder="invoice"
         output_filename= os.path.basename(self.input_pdf_path) 
-        password="merged_file_password"
+        self.merged_file_password="merged_file_password"
 
         count_file_in_input_directory = self.count_pdf_in_directory(input_folder)
 
@@ -509,20 +574,25 @@ class PDFCanvasRenderer:
         temp_output_file = os.path.join(output_folder, "temp_" + output_filename)
         final_output_file = os.path.join(output_folder, output_filename)
 
-        # Récupérer la liste des fichiers PDF dans le dossier
-        pdf_files = [f for f in os.listdir(input_folder) if f.endswith('.pdf')]
+        #initialiser l'attribut qui contiendra le path finale
+        self.merged_file_name = final_output_file
+
         
+        # Récupérer la liste des fichiers PDF dans le dossier
+        pdf_files = [f for f in os.listdir("out_temp") if f.endswith('.pdf')]
+
         if not pdf_files:
              messagebox.showerror("Erreur", "file not found")
              return
 
-        pdf_files.sort()  # Trier les fichiers par ordre alphabétique (optionnel)
+        # Trier la liste en fonction du numéro extrait
+        pdf_files_sorted = sorted(pdf_files, key=extract_page_number)
 
         # Fusionner les fichiers PDF
         merger = PdfMerger()
         try:
 
-            for pdf_file in pdf_files:
+            for pdf_file in  pdf_files_sorted:
                 file_path = os.path.join(input_folder, pdf_file)
                 merger.append(file_path)
             
@@ -535,15 +605,26 @@ class PDFCanvasRenderer:
         # Ajouter une protection par mot de passe avec pikepdf
         try:
             with pikepdf.Pdf.open(temp_output_file) as pdf:
-                pdf.save(final_output_file, encryption=pikepdf.Encryption(owner=password, user=password))
-                messagebox.showinfo("Succès", f"Saved successfuly")
+                pdf.save(final_output_file, encryption=pikepdf.Encryption(owner=self.merged_file_password, user=self.merged_file_password))
+                
                 #signer la fusion comme etant faite
                 self.is_merged_and_protect_pdfs = True
                 self.clean_out_temp_folder()
+             
                 
         finally:
             # Supprimer le fichier temporaire
             os.remove(temp_output_file)
+
+                            # Boîte de dialogue avec options
+            preview = messagebox.askyesno("File saved successfuly", "Do you want to preview?")
+
+            if preview:  
+                self.launch_pdf_viewer()  # Lancer la prévisualisation si l'utilisateur clique sur "Yes"
+                 
+
+        
+        
 
         
 
