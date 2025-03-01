@@ -406,7 +406,6 @@ class Drawer:
 # Exemple d'utilisation
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("600x400")
 
     interval = {"start": 1}
     font_settings = {"size": 12, "family": "Arial", "color": "#000000", "italic": False, "bold": False}

@@ -360,6 +360,5 @@ if __name__ == "__main__":
     
     subscription = Subscription(root)
     subscription.decrement_usage_limit(1960)
-    print(subscription.get_usage_limit())
 
     root.mainloop()
