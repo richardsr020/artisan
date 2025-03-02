@@ -79,14 +79,6 @@ class PDFCanvasRenderer:
     def save_print_config(self):
         """Save PDF file path and password to printer.json
         Returns True if successful, False otherwise"""
-        # Validate inputs
-        if not self.final_invoice_path:
-            print("Error: No file path provided")
-            return False
-        
-        if not self.final_invoice_path.lower().endswith('.pdf'):
-            print("Error: Only PDF files are allowed")
-            return False
 
         # Create config data
         config_data = {
@@ -112,7 +104,6 @@ class PDFCanvasRenderer:
             if platform.system() == "Windows":
                 subprocess.run("winPrinter_1.0.exe")
             else:
-                print(".")
                 messagebox.showerror("Erreur", "Unable to launch printer.exe")
         except Exception as e:
             messagebox.showerror("Erreur", f"Unable to launch printer.exe")
@@ -473,8 +464,6 @@ class PDFCanvasRenderer:
             self.canvas.create_oval(
                 x - radius, y - radius, x + radius, y + radius, outline="red"
             )
-            # print(f"Clic à : ({x}, {y})")
-            # print(f"Coordonnées enregistrées : {self.coordinates}")
 
         self.canvas.bind("<Button-1>", on_canvas_click)
 

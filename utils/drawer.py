@@ -147,7 +147,7 @@ class Drawer:
         # Capturer l'image du Canvas
         image = ImageGrab.grab(bbox=(x0, y0, x1, y1))
         image.save(png_path, "PNG")  # Sauvegarder l'image dans png_temp
-        print(f"Image PNG sauvegardée dans : {png_path}")
+        
 
         # Créer un PDF avec les mêmes dimensions que le Canvas Tkinter
         pdf_canvas = canvas.Canvas(pdf_path, pagesize=(image.width, image.height))
@@ -158,7 +158,6 @@ class Drawer:
         # Finaliser le PDF
         pdf_canvas.save()
 
-        print(f"PDF sauvegardé dans : {pdf_path}")
 
 
 
@@ -171,6 +170,7 @@ class Drawer:
         
         number_of_pages = len(self.paths_to_duplicated_pages) # les nombre de page du facturier
         start_number = self.config["start"]  # Numéro de départ
+        font_size = self.config["font_size"]
 
 
         #document temporaire à numeroter
@@ -213,13 +213,7 @@ class Drawer:
         # Récupérer les paramètres de style
         #font_family = self.config["font_family"]
         font_size = self.config["font_size"]
-        #font_weight = "bold" if self.config["bold"] else "normal"
-        #font_slant = "italic" if self.config["italic"] else "roman"
-
-        # Créer une couleur avec les paramètres
-        #color = self.config["font_color"]
-
-        # Créer le dossier temporaire si nécessaire
+        
         output_dir = "out_temp"
         os.makedirs(output_dir, exist_ok=True)
         
