@@ -16,7 +16,7 @@ from utils.utils import *
 from utils.drawer import * 
 from utils.workflow import *
 from utils.subscription import *
-from utils.printers import *
+#from utils.printers import *
 from utils.pdf_viewer import *
 
 

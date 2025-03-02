@@ -3,5 +3,5 @@ pikepdf
 PyPDF2
 cryptography
 datetime
-pycup
+reportlab
 sqlcipher3
