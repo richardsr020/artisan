@@ -228,7 +228,7 @@ class Subscription:
                 filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
                 if filepath:  # Si l'utilisateur a sélectionné un emplacement
                     with open(filepath, "w") as f:
-                        f.write(row[2])  # Sauvegarde de la clé publique dans le fichier
+                        f.write(row[3])  # Sauvegarde de la clé publique dans le fichier
                     messagebox.showinfo("Successfully", f"Saved Key: {filepath}")
             
             # Ajout d'un bouton "Browse" pour choisir l'emplacement de sauvegarde

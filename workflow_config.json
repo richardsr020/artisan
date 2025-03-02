@@ -1,6 +1,6 @@
 [
     {
-        "start": 5,
+        "start": 1,
         "font_size": "24",
         "font_family": "Arial",
         "font_color": [
@@ -10,12 +10,13 @@
         ],
         "italic": false,
         "bold": false,
-        "num_pages_to_duplicate": 4
+        "num_pages_to_duplicate": 5
     },
     [
         "temp/page_1.pdf",
         "temp/page_2.pdf",
         "temp/page_3.pdf",
-        "temp/page_4.pdf"
+        "temp/page_4.pdf",
+        "temp/page_5.pdf"
     ]
 ]

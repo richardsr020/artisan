@@ -4,6 +4,7 @@ import re
 import fitz  # PyMuPDF
 import pikepdf
 import platform
+import subprocess
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from PyPDF2 import PdfReader, PdfMerger
@@ -56,32 +57,15 @@ class PDFCanvasRenderer:
         self.wf_config_data = None
         self.drawer_config_data = None
         self.subscription = None 
-        self.printer = None # initalisation du systeme d'impression selo l'OS
+        self.final_invoice_path = None # initalisation du path de la facture final
+        self.final_invoice_password = None #initialiser le mot de passe de la facture final
 
         # Initialisation des outils
 
         self.init_subscription_()
-        self.init_printer_service()
 
 
 
-    def detect_os(self):
-        os_name = platform.system()
-        
-        if os_name == "Windows":
-            return os_name
-
-        elif os_name == "Linux":
-            return os_name
-        else:
-            messagebox.showerror("Erreur", f"{os_name} operating system is not suported.")
-            return
-
-
-    
-    
-    
-    
     
     def launch_pdf_viewer(self):
 
@@ -91,15 +75,48 @@ class PDFCanvasRenderer:
 
 
     
-    def init_printer_service(self):
-        """initialisation de la classe d'impression selon l'OS detecté"""
-        if self.detect_os == "Windows":
-            #self.printer = WindowsPrinterService()
-            messagebox.showerror("Erreur", f"unavailable printing service")
-        elif self.detect_os == "Linux":
-            self.printer = LinuxPrinterService()
-        else:
-            return
+
+    def save_print_config(self):
+        """Save PDF file path and password to printer.json
+        Returns True if successful, False otherwise"""
+        # Validate inputs
+        if not self.final_invoice_path:
+            print("Error: No file path provided")
+            return False
+        
+        if not self.final_invoice_path.lower().endswith('.pdf'):
+            print("Error: Only PDF files are allowed")
+            return False
+
+        # Create config data
+        config_data = {
+            "file_path": self.final_invoice_path,
+            "password": self.final_invoice_password
+        }
+
+        # Save to file
+        try:
+            with open("printer.json", "w") as f:
+                json.dump(config_data, f, indent=4)
+            return True
+        except Exception as e:
+            messagebox.showerror("Erreur", f"unable to save config")
+            return False
+
+       
+    def launch_printer_exe(self):
+        """lunch the printer .exe app""" 
+        self.save_print_config()
+        try:
+            # Check OS
+            if platform.system() == "Windows":
+                subprocess.run("winPrinter_1.0.exe")
+            else:
+                print(".")
+                messagebox.showerror("Erreur", "Unable to launch printer.exe")
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Unable to launch printer.exe")
+
 
 
     
@@ -173,7 +190,7 @@ class PDFCanvasRenderer:
         """
         Charge les icônes à partir du dossier 'icons' et les stocke dans un dictionnaire.
         """
-        icon_names = ["icon0","icon1", "icon2", "icon3", "icon4", "icon5","icon6","icon7"]
+        icon_names = ["icon0","icon1", "icon2", "icon3", "icon4", "icon5","icon6","icon7","icon8"]
         for icon_name in icon_names:
             icon_path = os.path.join("icons", f"{icon_name}.png")
             image = Image.open(icon_path)
@@ -256,7 +273,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon6"],
-            command= self.create_subscriptionn,
+            command= self.launch_printer_exe,
             bg="#A5A6A6",
             relief="flat",
             borderwidth=0,  # Supprime la bordure
@@ -266,6 +283,16 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon7"],
+            command= self.create_subscriptionn,
+            bg="#A5A6A6",
+            relief="flat",
+            borderwidth=0,  # Supprime la bordure
+            highlightthickness=0  # Supprime l'effet de focus
+        ).pack(pady=5)
+        
+        Button(
+            self.sidebar,
+            image=self.icons["icon8"],
             command= self.get_user_subscription_status,
             bg="#A5A6A6",
             relief="flat",
@@ -551,6 +578,10 @@ class PDFCanvasRenderer:
         output_folder="invoice"
         output_filename= os.path.basename(self.input_pdf_path) 
         self.merged_file_password="merged_file_password"
+        # Construire le chemin du fichier final
+        self.final_invoice_path = os.path.join(output_folder, output_filename)
+        self.final_invoice_password = self.merged_file_password #initialiser le mot de passe de la facture final
+
 
         count_file_in_input_directory = self.count_pdf_in_directory(input_folder)
 
@@ -613,6 +644,7 @@ class PDFCanvasRenderer:
              
                 
         finally:
+
             # Supprimer le fichier temporaire
             os.remove(temp_output_file)
 

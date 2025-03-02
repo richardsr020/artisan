@@ -3,6 +3,5 @@ pikepdf
 PyPDF2
 cryptography
 datetime
-pywin32
-auto-py-to-exes
+pycup
 sqlcipher3
