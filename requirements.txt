@@ -4,4 +4,4 @@ PyPDF2
 cryptography
 datetime
 reportlab
-sqlcipher3
+pycryptodome
