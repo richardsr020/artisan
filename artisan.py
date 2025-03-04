@@ -16,6 +16,7 @@ from utils.utils import *
 from utils.drawer import * 
 from utils.workflow import *
 from utils.subscription import *
+from utils.cipher import *
 #from utils.printers import *
 from utils.pdf_viewer import *
 
@@ -57,12 +58,14 @@ class PDFCanvasRenderer:
         self.wf_config_data = None
         self.drawer_config_data = None
         self.subscription = None 
+        self.cipher = None  # attribut qui initialise l'objet Cipher
         self.final_invoice_path = None # initalisation du path de la facture final
         self.final_invoice_password = None #initialiser le mot de passe de la facture final
 
         # Initialisation des outils
 
         self.init_subscription_()
+        self.init_cipher()
 
 
 
@@ -98,6 +101,12 @@ class PDFCanvasRenderer:
        
     def launch_printer_exe(self):
         """lunch the printer .exe app""" 
+
+        if not self.is_file_loaded:
+        # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+            messagebox.showerror("Erreur", "No file loaded")
+            return
+        
         self.save_print_config()
         try:
             # Check OS
@@ -118,34 +127,44 @@ class PDFCanvasRenderer:
         """
         self.subscription = Subscription(self.root)
         
-    
+    def init_cipher(self):
+        """
+        Initialise les composants graphiques pour la gestion des abonnements
+        """
+        ENCRYPTION_KEY = "your_secret_key"  # Clé de chiffrement pour la classe Cipher
+        self.cipher = Cipher(ENCRYPTION_KEY)
    
    
    
     def create_subscriptionn(self):
-                # Ouvrir la boîte de dialogue pour sélectionner un fichier .txt
-        file_path = filedialog.askopenfilename()
+            # Ouvrir la boîte de dialogue pour sélectionner un fichier .txt
+            # verifier l'existance d'un user deja enregistré
+            if not self.subscription.is_user_registered():
+                messagebox.showwarning("Avertissement", "please signUp before")
+                return
 
-        # Vérifier si un fichier a été sélectionné
-        if file_path:
-            try:
-                # Lire le contenu du fichier et le stocker dans la variable `key`
-                with open(file_path, "rb") as file:
-                    key = file.read()
-                    
+            file_path = filedialog.askopenfilename()
 
-                # Afficher un message de succès
-                messagebox.showinfo("Succès", "Your key is ready click on OK !")
+            # Vérifier si un fichier a été sélectionné
+            if file_path:
+                try:
+                    # Vérifier le hash du fichier
+                    self.cipher.handle_file_hash(file_path)  # Appel de handle_file_hash
 
-                # Lancer le reabonnement
-                self.subscription.recharge(key)
+                    # Lire le contenu du fichier et le stocker dans la variable `key`
+                    with open(file_path, "rb") as file:
+                        key = file.read()
 
-            except Exception as e:
-                messagebox.showerror("Erreur", f"unable to read the file: {e}")
-        else:
-            messagebox.showwarning("Annulation", "No file selected.")
+                    # Afficher un message de succès
+                    messagebox.showinfo("Succès", "Your key is ready, click on OK!")
 
+                    # Lancer le reabonnement
+                    self.subscription.recharge(key)
 
+                except Exception as e:
+                    messagebox.showerror("Erreur", f"Unable to read the file: {e}")
+            else:
+                messagebox.showwarning("Annulation", "No file selected.")
     
     
     def get_user_subscription_status(self):

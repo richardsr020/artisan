@@ -54,19 +54,19 @@ class EncryptionService:
 if __name__ == "__main__":
     # Exemple de clé publique PEM (pour une vraie utilisation, récupérer la clé publique d'un utilisateur)
     example_public_key_pem = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAthFzb/mhTdTompresZuI
-q+CaG9PMc9Iok0VyV1XKXYudRpKFgsC8Ld6h4FR3KBF5wHqNk3441TiCkV3u9S6U
-+nbkKtbIVLwUENMzkJlaLvrw6JFjo9EWST8cSL9WHf0mQWqFtuRTwXqaz9DSaMZp
-W032QzZmD1Elt1l7fVRUtoakZAu6SWOHo3kqX+Z2V+1d1y/E1Es3ePrJ483KGYJR
-EqHLK/7/B05zV2FM9256KpV8DwLGbpIR6vUrSiYlhVEOcTsvmptP6RW0NBM1gmoZ
-EAubypZVhycVTdARbfLdYfsOJrWh4onUOL3asCnIQrICVZEo+KUMp1R74PlpIdKm
-fQIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjNCelYNQ6ndRgQfWwoHf
+WKU6ciHEmZhmQpy/qUgc816PxOpbN1ah/lshlQkhWik37GJEH7OsAZbWNI+qxIHJ
+q7ZwCwwf5sU6/dtg5Vuj4UHFJmQqpe9EeyEXwEV7U/jZG25QVmiLD7Z7AdXNTZjD
+amaEwFc9/chf/P3JRMj1seN1IwSr+cxlGR2fZ/SEfv4kBRZ0mmT/BKo5HSDWgPeS
+u4HQTfOBvgKiyyXh8v+s2w+j9LzXaXNCgjywFRMQxkiXfls7n/jnqrnh7A25Xj25
+jk9MH2GrF5GyjDlwxRJ3Jovx9X3XEf3PiONS4V11q2GuvTPgMTTigAyJNczlfRmT
+zwIDAQAB
 -----END PUBLIC KEY-----
 """
     
     phone_number = "0840149027"
     limit = 100
-    email = "example@example.com"  # Placeholder, utiliser l'email de l'utilisateur
+    email = "richard@gmail.com"  # Placeholder, utiliser l'email de l'utilisateur
 
     # Initialisation du service d'encryption
     encryption_service = EncryptionService()
