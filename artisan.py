@@ -17,7 +17,7 @@ from utils.drawer import *
 from utils.workflow import *
 from utils.subscription import *
 from utils.cipher import *
-#from utils.printers import *
+from utils.winPrinter import *
 from utils.pdf_viewer import *
 
 
@@ -75,51 +75,17 @@ class PDFCanvasRenderer:
         PDFViewer(self.root, self.merged_file_name, self.merged_file_password)
 
 
-
-
-    
-
-    def save_print_config(self):
-        """Save PDF file path and password to printer.json
-        Returns True if successful, False otherwise"""
-
-        # Create config data
-        config_data = {
-            "file_path": self.final_invoice_path,
-            "password": self.final_invoice_password
-        }
-
-        # Save to file
-        try:
-            with open("printer.json", "w") as f:
-                json.dump(config_data, f, indent=4)
-            return True
-        except Exception as e:
-            messagebox.showerror("Erreur", f"unable to save config")
-            return False
-
        
-    def launch_printer_exe(self):
+    def launch_printer(self):
         """lunch the printer .exe app""" 
 
         if not self.is_file_loaded:
         # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
             messagebox.showerror("Erreur", "No file loaded")
             return
-        
-        self.save_print_config()
-        try:
-            # Check OS
-            if platform.system() == "Windows":
-                subprocess.run("winPrinter_1.0.exe")
-            else:
-                messagebox.showerror("Erreur", "Unable to launch printer.exe")
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Unable to launch printer.exe")
 
+        printer = PrinterApp(self.root, self.final_invoice_path, self.final_invoice_password)
 
-
-    
     
     def init_subscription_(self):
         """
@@ -277,7 +243,7 @@ class PDFCanvasRenderer:
         Button(
             self.sidebar,
             image=self.icons["icon6"],
-            command= self.launch_printer_exe,
+            command= self.launch_printer,
             bg="#A5A6A6",
             relief="flat",
             borderwidth=0,  # Supprime la bordure

@@ -1,15 +1,7 @@
 [
     {
         "start": 1,
-        "font_size": "25",
-        "font_family": "Arial",
-        "font_color": [
-            0,
-            0,
-            0
-        ],
-        "italic": false,
-        "bold": false,
+        "font_size": "12",
         "num_pages_to_duplicate": 5
     },
     [
