@@ -17,6 +17,8 @@ class PDFViewer:
 
         # Création de la fenêtre principale
         self.root = Toplevel(root)
+        self.icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+        self.root.iconphoto(False, self.icon)  # Définir l'icône
         self.root.title("PDF Viewer")
         self.root.geometry(f"{self.window_width}x{self.window_height}")
         self.root.resizable(False, False)

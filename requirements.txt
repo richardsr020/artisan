@@ -1,7 +1,0 @@
-PyMuPDF
-pikepdf
-PyPDF2
-cryptography
-datetime
-reportlab
-pycryptodome

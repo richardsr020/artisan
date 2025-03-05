@@ -8,7 +8,7 @@ import hashlib
 from pprint import pprint
 from utils.cipher import Cipher  # Importation de la classe Cipher
 
-DB_NAME = "utils/subscription.db"
+DB_NAME = "_internal/subscription.db"
 ENCRYPTION_KEY = "your_secret_key"  # Clé de chiffrement pour la classe Cipher
 
 class Subscription:
