@@ -177,6 +177,8 @@ class PDFCanvasRenderer:
         Initialise la fenêtre principale et les composants graphiques.
         """
         self.root = Tk()
+        self.icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+        self.root.iconphoto(False, self.icon)  # Définir l'icône
         self.root.title("Artisan ND")
 
         # Créer la barre latérale
@@ -200,7 +202,7 @@ class PDFCanvasRenderer:
         """
         Charge les icônes à partir du dossier 'icons' et les stocke dans un dictionnaire.
         """
-        icon_names = ["icon0","icon1", "icon2", "icon3", "icon4", "icon5","icon6","icon7","icon8"]
+        icon_names = ["icon1", "icon2", "icon3", "icon4", "icon5","icon6","icon7","icon8"]
         for icon_name in icon_names:
             icon_path = os.path.join("icons", f"{icon_name}.png")
             image = Image.open(icon_path)
@@ -220,14 +222,6 @@ class PDFCanvasRenderer:
 
         # Charger les icônes
         self.load_icons()
-
-        # Ajouter les boutons avec leurs icônes et commandes respectives
-        Label(
-            self.sidebar,
-            image=self.icons["icon0"],
-            bg="#A5A6A6", 
-        ).pack(pady=5)
-
 
         Button(
             self.sidebar,
@@ -440,6 +434,8 @@ class PDFCanvasRenderer:
             """
             # Crée une fenêtre Toplevel temporaire
             file_explorer = Toplevel(self.root)
+            icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+            file_explorer.iconphoto(False, icon)  # Définir l'icône
             file_explorer.title("Configuration")
             # Centrer la fenêtre de configuration
             file_explorer.geometry(f"300x200+{self.root.winfo_x() + 100}+{self.root.winfo_y() + 100}")

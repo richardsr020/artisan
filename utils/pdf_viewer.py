@@ -1,7 +1,7 @@
 import fitz  # PyMuPDF
 import os
 import tkinter as tk
-from tkinter import messagebox, Canvas, Scrollbar, Frame,Toplevel
+from tkinter import PhotoImage, messagebox, Canvas, Scrollbar, Frame,Toplevel
 from PIL import Image, ImageTk
 
 class PDFViewer:

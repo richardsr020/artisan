@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Toplevel, Label, Entry, Button, StringVar, IntVar, ttk, messagebox, colorchooser
+from tkinter import PhotoImage, Toplevel, Label, Entry, Button, StringVar, IntVar, ttk, messagebox, colorchooser
 from PyPDF2 import PdfReader, PdfWriter
 import os
 
@@ -90,6 +90,8 @@ class WorkflowConfig:
         """
         # Création de la fenêtre Toplevel
         config_window = Toplevel(self.root)
+        icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+        config_window.iconphoto(False, icon)  # Définir l'icône
         config_window.title("Drawer & Duplicator Configuration")
         config_window.geometry("450x400")
         config_window.resizable(False, False)

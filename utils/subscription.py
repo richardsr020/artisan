@@ -2,13 +2,13 @@ import sqlite3
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 import tkinter as tk
-from tkinter import Toplevel, Label, Entry, Frame, Button, messagebox, filedialog
+from tkinter import PhotoImage, Toplevel, Label, Entry, Frame, Button, messagebox, filedialog
 import json
 import hashlib
 from pprint import pprint
 from utils.cipher import Cipher  # Importation de la classe Cipher
 
-DB_NAME = "_internal/subscription.db"
+DB_NAME = "subscription.db"
 ENCRYPTION_KEY = "your_secret_key"  # Clé de chiffrement pour la classe Cipher
 
 class Subscription:
@@ -186,6 +186,8 @@ class Subscription:
             decrypted_public_key = self.cipher.decrypt(row[3])
 
             top = Toplevel(self.root)
+            icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+            top.iconphoto(False, icon)  # Définir l'icône
             top.title("User Info")
             top.geometry("500x350")
             top.resizable(False, False)
@@ -220,6 +222,8 @@ class Subscription:
         """Fenêtre d'inscription utilisateur avec un formulaire"""
         if not self.is_user_registered():
             root = Toplevel(self.root)
+            icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
+            root.iconphoto(False, icon)  # Définir l'icône
             root.title("Inscription Utilisateur")
 
             frame = Frame(root)
