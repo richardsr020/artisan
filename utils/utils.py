@@ -19,7 +19,32 @@ def clear_folder(folder_path):
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
     
-    
+def smart_messagebox(parent, titre, message):
+    """Centre une boîte de message au centre de la fenêtre parente."""
+
+    parent.update_idletasks()  # Assure que la fenêtre parente a les bonnes dimensions
+
+    largeur_parent = parent.winfo_width()
+    hauteur_parent = parent.winfo_height()
+    x_parent = parent.winfo_rootx()
+    y_parent = parent.winfo_rooty()
+    x_centre_parent = x_parent + largeur_parent // 2
+    y_centre_parent = y_parent + hauteur_parent // 2
+
+    # Estimation de la taille de la boîte de message (peut nécessiter des ajustements)
+    largeur_messagebox = 300
+    hauteur_messagebox = 150
+
+    x_messagebox = x_centre_parent - largeur_messagebox // 2
+    y_messagebox = y_centre_parent - hauteur_messagebox // 2
+
+    # Création de la boîte de message
+    messagebox.showinfo(titre, message, parent=parent)
+
+    # Positionnement de la boîte de message
+    # Malheureusement, messagebox.showinfo ne permet pas de modifier la géométrie après sa création.
+    # Pour un contrôle total, il faut créer une fenêtre Toplevel personnalisée.
+    # Ou utiliser une librairie comme CTkMessagebox qui le permet.    
 
 
 
