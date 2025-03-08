@@ -76,9 +76,9 @@ class Subscription:
             self.conn.execute("INSERT INTO user (phone, email, ul, public, private) VALUES (?, ?, ?, ?, ?)",
                               (encrypted_phone, encrypted_email, encrypted_usage_limit, encrypted_public_pem, encrypted_private_pem))
             self.conn.commit()
-            messagebox.showinfo("Inscription", "Utilisateur inscrit avec succès!")
+            messagebox.showinfo("Inscription", "Successfully registered!")
         except sqlite3.IntegrityError:
-            messagebox.showerror("Erreur", "Ce numéro est déjà inscrit!")
+            messagebox.showerror("Erreur", "Number allready used!")
 
     def recharge(self, encrypted_message):
         """Déchiffre le message RSA et met à jour le quota d'abonnement de l'utilisateur"""
@@ -109,9 +109,9 @@ class Subscription:
                 if data:
                     self.update_user_quota(data)
             except Exception as e:
-                messagebox.showerror("Erreur", f"Échec du rechargement : {e}")
+                messagebox.showerror("Erreur", f"loading failed : {e}")
         else:
-            messagebox.showerror("Erreur", "Utilisateur non trouvé")
+            messagebox.showerror("Erreur", "No user found")
 
     def decode_message(self, decrypted_value):
         """Décode la valeur déchiffrée en JSON"""
@@ -120,11 +120,11 @@ class Subscription:
             data = json.loads(decoded_value)
             return data
         except UnicodeDecodeError as e:
-            print(f"Erreur de décodage UTF-8 : {e}")
-            messagebox.showerror("Erreur", f"Erreur de décodage du message : {e}")
+            
+            messagebox.showerror("Erreur", f"Error when decode message : {e}")
             return None
         except json.JSONDecodeError as e:
-            print(f"Erreur de décodage JSON : {e}")
+           
             messagebox.showerror("Erreur", f"Erreur de décodage JSON : {e}")
             return None
 
@@ -224,12 +224,12 @@ class Subscription:
             root = Toplevel(self.root)
             icon = PhotoImage(file="icons/icon0.png")  # Chargement de l'icône
             root.iconphoto(False, icon)  # Définir l'icône
-            root.title("Inscription Utilisateur")
+            root.title("signUp")
 
             frame = Frame(root)
             frame.pack(padx=20, pady=20)
 
-            phone_label = tk.Label(frame, text="Numéro de téléphone")
+            phone_label = tk.Label(frame, text="Phone")
             phone_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
             phone_entry = tk.Entry(frame)
             phone_entry.grid(row=0, column=1, padx=10, pady=5)
@@ -246,7 +246,7 @@ class Subscription:
                     self.register_user(phone, email)
                     root.destroy()
                 else:
-                    messagebox.showerror("Erreur", "Tous les champs doivent être remplis.")
+                    messagebox.showerror("Erreur", "all field must be fill.")
 
             submit_button = tk.Button(frame, text="S'inscrire", command=on_submit)
             submit_button.grid(row=2, columnspan=2, pady=10)
