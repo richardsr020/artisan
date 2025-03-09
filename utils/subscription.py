@@ -68,7 +68,7 @@ class Subscription:
             # Chiffrement des données sensibles avant stockage
             encrypted_phone = self.cipher.encrypt(phone)
             encrypted_email = self.cipher.encrypt(email)
-            encrypted_usage_limit = self.cipher.encrypt(str(100))  # ul initialisé à 100
+            encrypted_usage_limit = self.cipher.encrypt(str(0))  # ul initialisé à 100
             encrypted_public_pem = self.cipher.encrypt(public_pem)
             encrypted_private_pem = self.cipher.encrypt(private_pem)
 
