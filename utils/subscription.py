@@ -192,7 +192,7 @@ class Subscription:
             top.geometry("500x350")
             top.resizable(False, False)
                 
-            info_text = f"""Phone: {decrypted_phone}\nEmail: {decrypted_email}\nUsage_quota: {decrypted_usage_limit} pages\n\nUser_Address: \n XXXX-XXXX-XXXX-XXXX \n\nContact us to get new quota: \n Our website: linker.alwaysdata.net \nContactlinker@gmail.com \n Phone: +243 993 900 488 or +243 840149027 (WhatsApp)"""
+            info_text = f"""Phone: {decrypted_phone}\nEmail: {decrypted_email}\nUsage_licence: {decrypted_usage_limit} pages\n\nUser_Address: \n XXXX-XXXX-XXXX-XXXX \n\nContact us to get new quota: \n Our website: linker.alwaysdata.net \nContactlinker@gmail.com \n Phone: +243 993 900 488 or +243 840149027 (WhatsApp)"""
             
             Label(top, text=info_text).pack(padx=10, pady=10)
             
@@ -301,6 +301,7 @@ class Subscription:
             else:
                 remain_quota = self.get_usage_limit()
                 messagebox.showerror("Erreur", f"You have {remain_quota} quota \n You don't have enough. Contact our support to add quota.")
+                
                 self.show_user_info()
         else:
             messagebox.showerror("Erreur", "Aucun utilisateur trouvé")

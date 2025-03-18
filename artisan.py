@@ -78,6 +78,10 @@ class PDFCanvasRenderer:
        
     def launch_printer(self):
         """lunch the printer .exe app""" 
+        if self.subscription.get_usage_limit() == 0 :
+            messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
+            self.subscription.show_user_info()
+            return
 
         if not self.is_file_loaded:
         # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
@@ -535,6 +539,11 @@ class PDFCanvasRenderer:
             # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
             messagebox.showerror("Erreur", "No file loaded")
             return
+        
+        if self.subscription.get_usage_limit() == 0 :
+            messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
+            self.subscription.show_user_info()
+            return
 
 
 
@@ -560,6 +569,7 @@ class PDFCanvasRenderer:
             return
         #decrementer le quota d'utilisation
         self.subscription.decrement_usage_limit(count_file_in_input_directory)
+ 
 
 
         # Vérifier si le dossier source existe

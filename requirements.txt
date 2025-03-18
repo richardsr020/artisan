@@ -1,0 +1,8 @@
+PyMuPDF
+pikepdf
+pillow
+PyPDF2
+cryptography
+reportlab
+pywin32
+pycryptodome
