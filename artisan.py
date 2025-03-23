@@ -17,7 +17,7 @@ from utils.drawer import *
 from utils.workflow import *
 from utils.subscription import *
 from utils.cipher import *
-from utils.winPrinter import *
+# from utils.winPrinter import *
 from utils.pdf_viewer import *
 
 
@@ -76,19 +76,19 @@ class PDFCanvasRenderer:
 
 
        
-    def launch_printer(self):
-        """lunch the printer .exe app""" 
-        if self.subscription.get_usage_limit() == 0 :
-            messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
-            self.subscription.show_user_info()
-            return
+    # def launch_printer(self):
+    #     """lunch the printer .exe app""" 
+    #     if self.subscription.get_usage_limit() == 0 :
+    #         messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
+    #         self.subscription.show_user_info()
+    #         return
 
-        if not self.is_file_loaded:
-        # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
-            messagebox.showerror("Erreur", "No file loaded")
-            return
+    #     if not self.is_file_loaded:
+    #     # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+    #         messagebox.showerror("Erreur", "No file loaded")
+    #         return
 
-        printer = PrinterApp(self.root, self.final_invoice_path, self.final_invoice_password)
+    #     printer = PrinterApp(self.root, self.final_invoice_path, self.final_invoice_password)
 
     
     def init_subscription_(self):
@@ -244,15 +244,15 @@ class PDFCanvasRenderer:
             highlightthickness=0  # Supprime l'effet de focus
         ).pack(pady=5)
 
-        Button(
-            self.sidebar,
-            image=self.icons["icon6"],
-            command= self.launch_printer,
-            bg="#A5A6A6",
-            relief="flat",
-            borderwidth=0,  # Supprime la bordure
-            highlightthickness=0  # Supprime l'effet de focus
-        ).pack(pady=5)
+        # Button(
+        #     self.sidebar,
+        #     image=self.icons["icon6"],
+        #     command= self.launch_printer,
+        #     bg="#A5A6A6",
+        #     relief="flat",
+        #     borderwidth=0,  # Supprime la bordure
+        #     highlightthickness=0  # Supprime l'effet de focus
+        # ).pack(pady=5)
         
         Button(
             self.sidebar,
@@ -524,118 +524,194 @@ class PDFCanvasRenderer:
     
 
 
+    # def merge_and_protect_pdfs(self):
+    #     """
+    #     Fusionne tous les fichiers PDF d'un dossier en un seul fichier PDF,
+    #     protège le fichier fusionné avec un mot de passe, et le stocke dans un dossier spécifié.
+        
+    #     :param input_folder: Chemin du dossier contenant les fichiers PDF.
+    #     :param output_folder: Chemin du dossier où stocker le fichier fusionné.
+    #     :param output_filename: Nom du fichier PDF fusionné.
+    #     :param password: Mot de passe pour protéger le fichier PDF.
+    #     """
+
+    #     if not self.is_file_loaded:
+    #         # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
+    #         messagebox.showerror("Erreur", "No file loaded")
+    #         return
+        
+    #     if self.subscription.get_usage_limit() == 0 :
+    #         messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
+    #         self.subscription.show_user_info()
+    #         return
+
+
+
+    #     # Fonction pour extraire le numéro de la page
+    #     def extract_page_number(filename):
+    #         match = re.search(r'page_(\d+)\.pdf', filename)
+    #         return int(match.group(1)) if match else float('inf')  # Utiliser "inf" si pas de numéro
+
+
+    #     input_folder="out_temp"
+    #     output_folder="invoice"
+    #     output_filename= os.path.basename(self.input_pdf_path) 
+    #     self.merged_file_password="merged_file_password"
+    #     # Construire le chemin du fichier final
+    #     self.final_invoice_path = os.path.join(output_folder, output_filename)
+    #     self.final_invoice_password = self.merged_file_password #initialiser le mot de passe de la facture final
+
+
+    #     count_file_in_input_directory = self.count_pdf_in_directory(input_folder)
+
+    #     if not count_file_in_input_directory :
+    #         messagebox.showerror("Erreur", "launch numbering befor saving")
+    #         return
+    #     #decrementer le quota d'utilisation
+    #     self.subscription.decrement_usage_limit(count_file_in_input_directory)
+ 
+
+
+    #     # Vérifier si le dossier source existe
+    #     if not os.path.exists(input_folder):
+    #          messagebox.showerror("Erreur", "folder not found")
+    #          return
+
+    #     # Créer le dossier de sortie s'il n'existe pas
+    #     if not os.path.exists(output_folder):
+    #         os.makedirs(output_folder)
+
+    #     # Chemin complet pour le fichier fusionné
+    #     temp_output_file = os.path.join(output_folder, "temp_" + output_filename)
+    #     final_output_file = os.path.join(output_folder, output_filename)
+
+    #     #initialiser l'attribut qui contiendra le path finale
+    #     self.merged_file_name = final_output_file
+
+        
+    #     # Récupérer la liste des fichiers PDF dans le dossier
+    #     pdf_files = [f for f in os.listdir("out_temp") if f.endswith('.pdf')]
+
+    #     if not pdf_files:
+    #          messagebox.showerror("Erreur", "file not found")
+    #          return
+
+    #     # Trier la liste en fonction du numéro extrait
+    #     pdf_files_sorted = sorted(pdf_files, key=extract_page_number)
+
+    #     # Fusionner les fichiers PDF
+    #     merger = PdfMerger()
+    #     try:
+
+    #         for pdf_file in  pdf_files_sorted:
+    #             file_path = os.path.join(input_folder, pdf_file)
+    #             merger.append(file_path)
+            
+    #         # Écrire le fichier fusionné temporaire
+    #         merger.write(temp_output_file)
+            
+    #     finally:
+    #         merger.close()
+
+    #     # Ajouter une protection par mot de passe avec pikepdf
+    #     try:
+    #         with pikepdf.Pdf.open(temp_output_file) as pdf:
+    #             pdf.save(final_output_file, encryption=pikepdf.Encryption(owner=self.merged_file_password, user=self.merged_file_password))
+                
+    #             #signer la fusion comme etant faite
+    #             self.is_merged_and_protect_pdfs = True
+    #             self.clean_out_temp_folder()
+             
+                
+    #     finally:
+
+    #         # Supprimer le fichier temporaire
+    #         os.remove(temp_output_file)
+
+    #                         # Boîte de dialogue avec options
+    #         preview = messagebox.askyesno("File saved successfuly", "Do you want to preview?")
+
+    #         if preview:  
+    #             self.launch_pdf_viewer()  # Lancer la prévisualisation si l'utilisateur clique sur "Yes"
+                 
+
+
+
     def merge_and_protect_pdfs(self):
         """
-        Fusionne tous les fichiers PDF d'un dossier en un seul fichier PDF,
-        protège le fichier fusionné avec un mot de passe, et le stocke dans un dossier spécifié.
-        
-        :param input_folder: Chemin du dossier contenant les fichiers PDF.
-        :param output_folder: Chemin du dossier où stocker le fichier fusionné.
-        :param output_filename: Nom du fichier PDF fusionné.
-        :param password: Mot de passe pour protéger le fichier PDF.
+        Fusionne tous les fichiers PDF d'un dossier en un seul fichier PDF
+        et permet à l'utilisateur de choisir où l'enregistrer.
         """
 
         if not self.is_file_loaded:
-            # Si le fichier n'est pas chargé, afficher un message d'erreur dans une boîte de dialogue
             messagebox.showerror("Erreur", "No file loaded")
             return
         
-        if self.subscription.get_usage_limit() == 0 :
-            messagebox.showerror("Erreur", "pleace contact suport to get a usage licence")
+        if self.subscription.get_usage_limit() == 0:
+            messagebox.showerror("Erreur", "Please contact support to get a usage license")
             self.subscription.show_user_info()
             return
-
-
 
         # Fonction pour extraire le numéro de la page
         def extract_page_number(filename):
             match = re.search(r'page_(\d+)\.pdf', filename)
-            return int(match.group(1)) if match else float('inf')  # Utiliser "inf" si pas de numéro
+            return int(match.group(1)) if match else float('inf')
 
-
-        input_folder="out_temp"
-        output_folder="invoice"
-        output_filename= os.path.basename(self.input_pdf_path) 
-        self.merged_file_password="merged_file_password"
-        # Construire le chemin du fichier final
-        self.final_invoice_path = os.path.join(output_folder, output_filename)
-        self.final_invoice_password = self.merged_file_password #initialiser le mot de passe de la facture final
-
-
+        input_folder = "out_temp"
         count_file_in_input_directory = self.count_pdf_in_directory(input_folder)
 
-        if not count_file_in_input_directory :
-            messagebox.showerror("Erreur", "launch numbering befor saving")
+        if not count_file_in_input_directory:
+            messagebox.showerror("Erreur", "Launch numbering before saving")
             return
-        #decrementer le quota d'utilisation
-        self.subscription.decrement_usage_limit(count_file_in_input_directory)
- 
 
+        # Décrémenter le quota d'utilisation
+        self.subscription.decrement_usage_limit(count_file_in_input_directory)
 
         # Vérifier si le dossier source existe
         if not os.path.exists(input_folder):
-             messagebox.showerror("Erreur", "folder not found")
-             return
+            messagebox.showerror("Erreur", "Folder not found")
+            return
 
-        # Créer le dossier de sortie s'il n'existe pas
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-
-        # Chemin complet pour le fichier fusionné
-        temp_output_file = os.path.join(output_folder, "temp_" + output_filename)
-        final_output_file = os.path.join(output_folder, output_filename)
-
-        #initialiser l'attribut qui contiendra le path finale
-        self.merged_file_name = final_output_file
-
-        
         # Récupérer la liste des fichiers PDF dans le dossier
-        pdf_files = [f for f in os.listdir("out_temp") if f.endswith('.pdf')]
+        pdf_files = [f for f in os.listdir(input_folder) if f.endswith('.pdf')]
 
         if not pdf_files:
-             messagebox.showerror("Erreur", "file not found")
-             return
+            messagebox.showerror("Erreur", "No PDF files found")
+            return
 
-        # Trier la liste en fonction du numéro extrait
+        # Trier les fichiers PDF par numéro de page
         pdf_files_sorted = sorted(pdf_files, key=extract_page_number)
+
+        # Demander à l'utilisateur où enregistrer le fichier fusionné
+        output_file = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")],
+            title="Save Merged PDF As"
+        )
+
+        if not output_file:
+            messagebox.showinfo("Info", "Operation cancelled by user")
+            return
 
         # Fusionner les fichiers PDF
         merger = PdfMerger()
         try:
-
-            for pdf_file in  pdf_files_sorted:
+            for pdf_file in pdf_files_sorted:
                 file_path = os.path.join(input_folder, pdf_file)
                 merger.append(file_path)
-            
-            # Écrire le fichier fusionné temporaire
-            merger.write(temp_output_file)
-            
+
+            merger.write(output_file)
+
         finally:
             merger.close()
 
-        # Ajouter une protection par mot de passe avec pikepdf
-        try:
-            with pikepdf.Pdf.open(temp_output_file) as pdf:
-                pdf.save(final_output_file, encryption=pikepdf.Encryption(owner=self.merged_file_password, user=self.merged_file_password))
-                
-                #signer la fusion comme etant faite
-                self.is_merged_and_protect_pdfs = True
-                self.clean_out_temp_folder()
-             
-                
-        finally:
+        # Nettoyer le dossier temporaire
+        self.clean_out_temp_folder()
 
-            # Supprimer le fichier temporaire
-            os.remove(temp_output_file)
+        # Boîte de dialogue pour prévisualiser le fichier fusionné
+        messagebox.showinfo("Info", "Successfully saved")
 
-                            # Boîte de dialogue avec options
-            preview = messagebox.askyesno("File saved successfuly", "Do you want to preview?")
-
-            if preview:  
-                self.launch_pdf_viewer()  # Lancer la prévisualisation si l'utilisateur clique sur "Yes"
-                 
-
-        
+       
         
 
         

@@ -5,10 +5,10 @@
         "num_pages_to_duplicate": 5
     },
     [
-        "temp\\page_1.pdf",
-        "temp\\page_2.pdf",
-        "temp\\page_3.pdf",
-        "temp\\page_4.pdf",
-        "temp\\page_5.pdf"
+        "temp/page_1.pdf",
+        "temp/page_2.pdf",
+        "temp/page_3.pdf",
+        "temp/page_4.pdf",
+        "temp/page_5.pdf"
     ]
 ]
